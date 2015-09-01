@@ -22,4 +22,4 @@ Authors
 -------
 
 Mathias Beke - [denbeke.be](http://denbeke.be)  
-siriusbtx
+Timo Truyts
