@@ -1,9 +1,10 @@
 package mta
 
 import (
-	"gopistolet/smtp"
 	"reflect"
 	"testing"
+
+	"github.com/gopistolet/gopistolet/smtp"
 )
 
 type testProtocol struct {

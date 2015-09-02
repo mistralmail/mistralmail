@@ -1,8 +1,9 @@
 package mta
 
 import (
-	"gopistolet/smtp"
 	"log"
+
+	"github.com/gopistolet/gopistolet/smtp"
 )
 
 type Config struct {
