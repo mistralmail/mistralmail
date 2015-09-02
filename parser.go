@@ -1,13 +1,22 @@
-package smtp
+package main
 
 import "bufio"
 import "strings"
 import "errors"
 
+type Cmd interface {
+}
+
 type parser struct {
 }
 
-func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
+type MailAddress struct{}
+
+func ParseAddress(a string) (*MailAddress, error) {
+	return nil, nil
+}
+
+func (p *parser) ParseCommand(br *bufio.Reader) (error, Cmd) {
 	/*
 		RFC 5321 2.3.8
 
@@ -26,7 +35,6 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 		line, _ = br.ReadString('\n')
 	}
 
-	var address *MailAddress
 	verb, args, err := parseLine(line)
 	if err != nil {
 		return err, nil
@@ -39,52 +47,35 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 
 	case "HELO":
 		{
-			command = HeloCmd{}
+			////conn.handleHELO(args)
 		}
 
 	case "EHLO":
 		{
-			command = EhloCmd{}
+			////conn.handleEHLO(args)
 		}
 
 	case "MAIL":
 		{
-			address, err = parseFROM(args)
-			command = MailCmd{From: address}
+			//conn.srv.handleMail(//conn, args)
 		}
 
 	case "RCPT":
 		{
-			address, err = parseTO(args)
-			command = RcptCmd{To: address}
+			//conn.handleRCPT(args)
 		}
 
 	case "DATA":
 		{
-			// TODO
+			//conn.handleDATA(args)
 		}
 
 	case "RSET":
 		{
-			command = RsetCmd{}
+			//conn.handleRSET(args)
 		}
 
-	case "SEND":
-		{
-			command = SendCmd{}
-		}
-
-	case "SOML":
-		{
-			command = SomlCmd{}
-		}
-
-	case "SAML":
-		{
-			command = SamlCmd{}
-		}
-
-	case "VRFY":
+	case "VRFY", "EXPN", "SEND", "SOML", "SAML":
 		{
 			//conn.write(502, "Command not implemented")
 			/*
@@ -107,32 +98,42 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 					conformance.
 				From what I have read, 502 is better than 252...
 			*/
-			command = VrfyCmd{}
-		}
-	
-	case "EXPN":
-		{
-			command = ExpnCmd{}
+
 		}
 
 	case "NOOP":
 		{
-			command = NoopCmd{}
+			//conn.handleNOOP(args)
 		}
 
 	case "QUIT":
 		{
-			command = QuitCmd{}
+			//conn.handleQUIT(args)
 		}
 
 	default:
 		{
-			command = InvalidCmd{Cmd: line}
+			/*
+				f := conn.srv.extension(verb)
+				if f == nil {
+					log.Printf("    > Command unrecognized: '%s'", verb)
+					//conn.write(500, "Command unrecognized")
+					break
+				}
+			*/
+			//f(//conn, args)
 		}
+
+		/*
+			RFC 5321
+			The maximum total length of a reply line including the reply code and
+			the <CRLF> is 512 octets.  More information may be conveyed through
+			multiple-line replies.
+		*/
 
 	}
 
-	return
+	return nil, nil
 }
 
 // parseLine returns the verb of the line and a list of all comma separated arguments
@@ -173,12 +174,7 @@ func parseFROM(args []string) (*MailAddress, error) {
 	}
 	address_str := joined_args[index+1 : len(joined_args)]
 
-	address, err := ParseAddress(address_str)
-	if err != nil {
-		return nil, err
-	} else {
-		return &address, nil
-	}
+	return ParseAddress(address_str)
 
 }
 
@@ -194,10 +190,5 @@ func parseTO(args []string) (*MailAddress, error) {
 	}
 	address_str := joined_args[index+1 : len(joined_args)]
 
-	address, err := ParseAddress(address_str)
-	if err != nil {
-		return nil, err
-	} else {
-		return &address, nil
-	}
+	return ParseAddress(address_str)
 }

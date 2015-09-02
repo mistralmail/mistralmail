@@ -12,21 +12,21 @@ type Config struct {
 
 // state contains all the state for a single client
 type state struct {
-	from string
-	to   []string
+	from *smtp.MailAddress
+	to   []*smtp.MailAddress
 	data []byte
 }
 
 // reset the state
 func (s *state) reset() {
-	s.from = ""
-	s.to = []string{}
+	s.from = nil
+	s.to = []*smtp.MailAddress{}
 	s.data = []byte{}
 }
 
 // Checks the state if the client can send a MAIL command.
 func (s *state) canReceiveMail() (bool, string) {
-	if s.from != "" {
+	if s.from != nil {
 		return false, "Sender already specified"
 	}
 
@@ -35,7 +35,7 @@ func (s *state) canReceiveMail() (bool, string) {
 
 // Checks the state if the client can send a RCPT command.
 func (s *state) canReceiveRcpt() (bool, string) {
-	if s.from == "" {
+	if s.from == nil {
 		return false, "Need mail before RCPT"
 	}
 
@@ -44,7 +44,7 @@ func (s *state) canReceiveRcpt() (bool, string) {
 
 // Checks the state if the client can send a DATA command.
 func (s *state) canReceiveData() (bool, string) {
-	if s.from == "" {
+	if s.from == nil {
 		return false, "Need mail before DATA"
 	}
 

@@ -13,6 +13,11 @@ type testProtocol struct {
 	answers []smtp.Cmd
 }
 
+func getMailWithoutError(a string) *smtp.MailAddress {
+	addr, _ := smtp.ParseAddress(a)
+	return &addr
+}
+
 func (p *testProtocol) Send(cmd smtp.Cmd) {
 	if len(p.answers) <= 0 {
 		p.t.Errorf("Did not expect an answer got: %v", cmd)
@@ -130,13 +135,13 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 				Domain: "some.sender",
 			},
 			smtp.MailCmd{
-				From: "someone@somewhere.test",
+				From: getMailWithoutError("someone@somewhere.test"),
 			},
 			smtp.RcptCmd{
-				To: "guy1@somewhere.test",
+				To: getMailWithoutError("guy1@somewhere.test"),
 			},
 			smtp.RcptCmd{
-				To: "guy2@somewhere.test",
+				To: getMailWithoutError("guy2@somewhere.test"),
 			},
 			smtp.DataCmd{
 				Data: []byte("Some test email"),
@@ -196,7 +201,7 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 				Domain: "some.sender",
 			},
 			smtp.RcptCmd{
-				To: "guy1@somewhere.test",
+				To: getMailWithoutError("guy1@somewhere.test"),
 			},
 			smtp.QuitCmd{},
 		},
@@ -262,7 +267,7 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 				Domain: "some.sender",
 			},
 			smtp.MailCmd{
-				From: "guy@somewhere.test",
+				From: getMailWithoutError("guy@somewhere.test"),
 			},
 			smtp.DataCmd{
 				Data: []byte("Some email"),
@@ -302,13 +307,13 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 				Domain: "some.sender",
 			},
 			smtp.MailCmd{
-				From: "guy@somewhere.test",
+				From: getMailWithoutError("guy@somewhere.test"),
 			},
 			smtp.RcptCmd{
-				To: "someone@somewhere.test",
+				To: getMailWithoutError("someone@somewhere.test"),
 			},
 			smtp.MailCmd{
-				From: "someguy@somewhere.test",
+				From: getMailWithoutError("someguy@somewhere.test"),
 			},
 			smtp.QuitCmd{},
 		},
@@ -361,16 +366,16 @@ func TestReset(t *testing.T) {
 				Domain: "some.sender",
 			},
 			smtp.MailCmd{
-				From: "someone@somewhere.test",
+				From: getMailWithoutError("someone@somewhere.test"),
 			},
 			smtp.RcptCmd{
-				To: "guy1@somewhere.test",
+				To: getMailWithoutError("guy1@somewhere.test"),
 			},
 			smtp.DataCmd{
 				Data: []byte("Some email content"),
 			},
 			smtp.RcptCmd{
-				To: "someguy@somewhere.test",
+				To: getMailWithoutError("someguy@somewhere.test"),
 			},
 			smtp.QuitCmd{},
 		},
@@ -415,17 +420,17 @@ func TestReset(t *testing.T) {
 				Domain: "some.sender",
 			},
 			smtp.MailCmd{
-				From: "someone@somewhere.test",
+				From: getMailWithoutError("someone@somewhere.test"),
 			},
 			smtp.RcptCmd{
-				To: "guy1@somewhere.test",
+				To: getMailWithoutError("guy1@somewhere.test"),
 			},
 			smtp.RsetCmd{},
 			smtp.MailCmd{
-				From: "someone@somewhere.test",
+				From: getMailWithoutError("someone@somewhere.test"),
 			},
 			smtp.RcptCmd{
-				To: "guy1@somewhere.test",
+				To: getMailWithoutError("guy1@somewhere.test"),
 			},
 			smtp.DataCmd{
 				Data: []byte("some email"),

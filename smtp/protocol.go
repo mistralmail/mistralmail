@@ -39,11 +39,11 @@ type QuitCmd struct {
 }
 
 type MailCmd struct {
-	From string
+	From *MailAddress
 }
 
 type RcptCmd struct {
-	To string
+	To *MailAddress
 }
 
 type DataCmd struct {
