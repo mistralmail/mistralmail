@@ -18,6 +18,10 @@ func (address *MailAddress) GetDomain() string {
 	return domain
 }
 
+func (address *MailAddress) GetAddress() string {
+	return address.Address
+}
+
 func ParseAddress(rawAddress string) (MailAddress, error) {
 
 	/*

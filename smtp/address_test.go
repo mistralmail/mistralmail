@@ -13,28 +13,57 @@ func TestParseAddress(t *testing.T) {
 		mails := []struct {
 			str    string
 			parsed struct {
-				Local  string
-				Domain string
+				Local   string
+				Domain  string
+				Address string
 			}
 		}{
 			{
-				str: `"Bob" <bob@example.com>`,
+				str: `<"bob"@example.com>`,
 				parsed: struct {
-					Local  string
-					Domain string
+					Local   string
+					Domain  string
+					Address string
 				}{
-					Local:  `bob`,
-					Domain: `example.com`,
+					Local:   `bob`,
+					Domain:  `example.com`,
+					Address: `bob@example.com`,
 				},
 			},
 			{
 				str: `   <bob@example.com> `,
 				parsed: struct {
-					Local  string
-					Domain string
+					Local   string
+					Domain  string
+					Address string
 				}{
-					Local:  `bob`,
-					Domain: `example.com`,
+					Local:   `bob`,
+					Domain:  `example.com`,
+					Address: `bob@example.com`,
+				},
+			},
+			{
+				str: `<" "@example.com>`,
+				parsed: struct {
+					Local   string
+					Domain  string
+					Address string
+				}{
+					Local:   ` `,
+					Domain:  `example.com`,
+					Address: ` @example.com`,
+				},
+			},
+			{
+				str: `<"test@test2"@example.com>`,
+				parsed: struct {
+					Local   string
+					Domain  string
+					Address string
+				}{
+					Local:   `test@test2`,
+					Domain:  `example.com`,
+					Address: `test@test2@example.com`,
 				},
 			},
 		}
@@ -43,6 +72,8 @@ func TestParseAddress(t *testing.T) {
 			address, err := ParseAddress(mail.str)
 			So(err, ShouldEqual, nil)
 			So(address.GetLocal(), ShouldEqual, mail.parsed.Local)
+			So(address.GetDomain(), ShouldEqual, mail.parsed.Domain)
+			So(address.GetAddress(), ShouldEqual, mail.parsed.Address)
 		}
 
 	})
