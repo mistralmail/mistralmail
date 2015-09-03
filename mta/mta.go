@@ -136,6 +136,16 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 
 		case smtp.DataCmd:
 			if ok, reason := state.canReceiveData(); !ok {
+				/*
+					RFC 5321 3.3
+
+					If there was no MAIL, or no RCPT, command, or all such commands were
+					rejected, the server MAY return a "command out of sequence" (503) or
+					"no valid recipients" (554) reply in response to the DATA command.
+					If one of those replies (or any other 5yz reply) is received, the
+					client MUST NOT send the message data; more generally, message data
+					MUST NOT be sent unless a 354 reply is received.
+				*/
 				proto.Send(smtp.Answer{
 					Status:  smtp.BadSequence,
 					Message: reason,

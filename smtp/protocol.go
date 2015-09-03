@@ -4,13 +4,14 @@ type StatusCode uint32
 
 // SMTP status codes
 const (
-	Ready            StatusCode = 220
-	Closing          StatusCode = 221
-	Ok               StatusCode = 250
-	SyntaxError      StatusCode = 500
-	SyntaxErrorParam StatusCode = 501
-	NotImplemented   StatusCode = 502
-	BadSequence      StatusCode = 503
+	Ready             StatusCode = 220
+	Closing           StatusCode = 221
+	Ok                StatusCode = 250
+	SyntaxError       StatusCode = 500
+	SyntaxErrorParam  StatusCode = 501
+	NotImplemented    StatusCode = 502
+	BadSequence       StatusCode = 503
+	NoValidRecipients StatusCode = 554
 )
 
 // Cmd All SMTP answers/commands should implement this interface.
