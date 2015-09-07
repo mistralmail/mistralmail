@@ -29,7 +29,7 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 	var address *MailAddress
 	verb, args, err := parseLine(line)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	//conn.write(500, err.Error())
 	//conn.c.Close()

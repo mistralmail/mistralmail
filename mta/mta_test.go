@@ -33,16 +33,20 @@ func (p *testProtocol) Send(cmd smtp.Cmd) {
 	}
 }
 
-func (p *testProtocol) GetCmd() *smtp.Cmd {
+func (p *testProtocol) GetCmd() (*smtp.Cmd, bool) {
 	if len(p.cmds) <= 0 {
 		p.t.Errorf("Did not expect to send a cmd")
-		return nil
+		return nil, false
 	}
 
 	cmd := p.cmds[0]
 	p.cmds = p.cmds[1:]
 
-	return &cmd
+	if cmd == nil {
+		return nil, false
+	}
+
+	return &cmd, true
 }
 
 func (p *testProtocol) Close() {

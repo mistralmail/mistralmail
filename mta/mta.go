@@ -1,13 +1,16 @@
 package mta
 
 import (
+	"fmt"
 	"log"
+	"net"
 
 	"github.com/gopistolet/gopistolet/smtp"
 )
 
 type Config struct {
 	Hostname string
+	Port     uint32
 }
 
 // state contains all the state for a single client
@@ -60,13 +63,71 @@ type Mta struct {
 	config Config
 }
 
-// New Create a new MTA server
+// New Create a new MTA server that doesn't handle the protocol.
 func New(c Config) *Mta {
 	mta := &Mta{
 		config: c,
 	}
 
 	return mta
+}
+
+// Same as the Mta struct but has methods for handling socket connections.
+type DefaultMta struct {
+	mta *Mta
+}
+
+// NewDefault Create a new MTA server with a
+// socket protocol implementation.
+func NewDefault(c Config) *DefaultMta {
+	mta := &DefaultMta{
+		mta: New(c),
+	}
+	if mta == nil {
+		return nil
+	}
+
+	return mta
+}
+
+func (s *DefaultMta) ListenAndServe() error {
+	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.mta.config.Hostname, s.mta.config.Port))
+	if err != nil {
+		log.Printf("Could not start listening: %v", err)
+		return err
+	}
+
+	return s.listen(ln)
+}
+
+func (s *DefaultMta) listen(ln net.Listener) error {
+	defer ln.Close()
+	for {
+		c, err := ln.Accept()
+		if err != nil {
+			if ne, ok := err.(net.Error); ok && ne.Temporary() {
+				log.Printf("Accept error: %v", err)
+				continue
+			}
+			return err
+		}
+
+		go s.serve(c)
+	}
+
+	// Dead code
+	panic("Can't get here")
+}
+
+func (s *DefaultMta) serve(c net.Conn) {
+	proto := smtp.NewMtaProtocol(c)
+	if proto == nil {
+		log.Printf("Could not create Mta protocol")
+		c.Close()
+		return
+	}
+
+	s.mta.HandleClient(proto)
 }
 
 // HandleClient Start communicating with a client
@@ -83,9 +144,9 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 		Message: s.config.Hostname + " Service Ready",
 	})
 
-	c := proto.GetCmd()
+	c, ok := proto.GetCmd()
 	quit := false
-	for *c != nil && quit == false {
+	for ok == true && quit == false {
 		log.Printf("Received cmd: %#v", *c)
 
 		switch cmd := (*c).(type) {
@@ -197,7 +258,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 			break
 		}
 
-		c = proto.GetCmd()
+		c, ok = proto.GetCmd()
 	}
 
 	proto.Close()
