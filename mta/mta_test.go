@@ -1,7 +1,8 @@
 package mta
 
 import (
-	"reflect"
+	"bytes"
+	"log"
 	"testing"
 
 	"github.com/gopistolet/gopistolet/smtp"
@@ -10,7 +11,7 @@ import (
 type testProtocol struct {
 	t       *testing.T
 	cmds    []smtp.Cmd
-	answers []smtp.Cmd
+	answers []smtp.Answer
 }
 
 func getMailWithoutError(a string) *smtp.MailAddress {
@@ -24,11 +25,19 @@ func (p *testProtocol) Send(cmd smtp.Cmd) {
 		return
 	}
 
+	log.Printf("%#v\n", cmd)
+
+	cmdA, ok := cmd.(smtp.Answer)
+	if !ok {
+		p.t.Errorf("Expected cmd.Answer got %t", cmd)
+		return
+	}
+
 	answer := p.answers[0]
 	p.answers = p.answers[1:]
 
-	if !reflect.DeepEqual(answer, cmd) {
-		p.t.Errorf("Expected answer %v, got %v", answer, cmd)
+	if answer.Status != cmdA.Status {
+		p.t.Errorf("Expected answer %d, got %d", answer.Status, cmdA.Status)
 		return
 	}
 }
@@ -81,7 +90,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 			},
 			smtp.QuitCmd{},
 		},
-		answers: []smtp.Cmd{
+		answers: []smtp.Answer{
 			smtp.Answer{
 				Status:  smtp.Ready,
 				Message: cfg.Hostname + " Service Ready",
@@ -107,7 +116,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 			},
 			nil,
 		},
-		answers: []smtp.Cmd{
+		answers: []smtp.Answer{
 			smtp.Answer{
 				Status:  smtp.Ready,
 				Message: cfg.Hostname + " Service Ready",
@@ -148,11 +157,11 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 				To: getMailWithoutError("guy2@somewhere.test"),
 			},
 			smtp.DataCmd{
-				Data: []byte("Some test email"),
+				R: *smtp.NewDataReader(bytes.NewReader([]byte("Some test email\n.\n"))),
 			},
 			smtp.QuitCmd{},
 		},
-		answers: []smtp.Cmd{
+		answers: []smtp.Answer{
 			smtp.Answer{
 				Status:  smtp.Ready,
 				Message: cfg.Hostname + " Service Ready",
@@ -174,7 +183,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 				Message: "OK",
 			},
 			smtp.Answer{
-				Status:  smtp.Ok,
+				Status:  smtp.StartData,
 				Message: "OK",
 			},
 			smtp.Answer{
@@ -209,7 +218,7 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 			},
 			smtp.QuitCmd{},
 		},
-		answers: []smtp.Cmd{
+		answers: []smtp.Answer{
 			smtp.Answer{
 				Status:  smtp.Ready,
 				Message: cfg.Hostname + " Service Ready",
@@ -237,12 +246,10 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 			smtp.HeloCmd{
 				Domain: "some.sender",
 			},
-			smtp.DataCmd{
-				Data: []byte("Some email"),
-			},
+			smtp.DataCmd{},
 			smtp.QuitCmd{},
 		},
-		answers: []smtp.Cmd{
+		answers: []smtp.Answer{
 			smtp.Answer{
 				Status:  smtp.Ready,
 				Message: cfg.Hostname + " Service Ready",
@@ -273,12 +280,10 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 			smtp.MailCmd{
 				From: getMailWithoutError("guy@somewhere.test"),
 			},
-			smtp.DataCmd{
-				Data: []byte("Some email"),
-			},
+			smtp.DataCmd{},
 			smtp.QuitCmd{},
 		},
-		answers: []smtp.Cmd{
+		answers: []smtp.Answer{
 			smtp.Answer{
 				Status:  smtp.Ready,
 				Message: cfg.Hostname + " Service Ready",
@@ -321,7 +326,7 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 			},
 			smtp.QuitCmd{},
 		},
-		answers: []smtp.Cmd{
+		answers: []smtp.Answer{
 			smtp.Answer{
 				Status:  smtp.Ready,
 				Message: cfg.Hostname + " Service Ready",
@@ -376,14 +381,14 @@ func TestReset(t *testing.T) {
 				To: getMailWithoutError("guy1@somewhere.test"),
 			},
 			smtp.DataCmd{
-				Data: []byte("Some email content"),
+				R: *smtp.NewDataReader(bytes.NewReader([]byte("Some email content\n.\n"))),
 			},
 			smtp.RcptCmd{
 				To: getMailWithoutError("someguy@somewhere.test"),
 			},
 			smtp.QuitCmd{},
 		},
-		answers: []smtp.Cmd{
+		answers: []smtp.Answer{
 			smtp.Answer{
 				Status:  smtp.Ready,
 				Message: cfg.Hostname + " Service Ready",
@@ -401,7 +406,7 @@ func TestReset(t *testing.T) {
 				Message: "OK",
 			},
 			smtp.Answer{
-				Status:  smtp.Ok,
+				Status:  smtp.StartData,
 				Message: "OK",
 			},
 			smtp.Answer{
@@ -437,11 +442,11 @@ func TestReset(t *testing.T) {
 				To: getMailWithoutError("guy1@somewhere.test"),
 			},
 			smtp.DataCmd{
-				Data: []byte("some email"),
+				R: *smtp.NewDataReader(bytes.NewReader([]byte("Some email\n.\n"))),
 			},
 			smtp.QuitCmd{},
 		},
-		answers: []smtp.Cmd{
+		answers: []smtp.Answer{
 			smtp.Answer{
 				Status:  smtp.Ready,
 				Message: cfg.Hostname + " Service Ready",
@@ -471,7 +476,7 @@ func TestReset(t *testing.T) {
 				Message: "OK",
 			},
 			smtp.Answer{
-				Status:  smtp.Ok,
+				Status:  smtp.StartData,
 				Message: "OK",
 			},
 			smtp.Answer{

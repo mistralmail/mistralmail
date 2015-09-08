@@ -2,6 +2,7 @@ package mta
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 
@@ -214,16 +215,40 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				break
 			}
 
-			state.data = cmd.Data
-
-			// TODO: Handle the email
-
 			state.reset()
 
 			proto.Send(smtp.Answer{
-				Status:  smtp.Ok,
-				Message: "OK",
+				Status:  smtp.StartData,
+				Message: "Start mail input; end with <CRLF>.<CRLF>",
 			})
+
+			data := []byte{}
+		tryAgain:
+			tmpData, err := ioutil.ReadAll(&cmd.R)
+			data = append(data, tmpData...)
+			if err == smtp.ErrLtl {
+				proto.Send(smtp.Answer{
+					// SyntaxError or 552 error? or something else?
+					Status:  smtp.SyntaxError,
+					Message: "Line too long",
+				})
+				goto tryAgain
+			} else if err == smtp.ErrIncomplete {
+				// I think this can only happen on a socket if it gets closed before receiving the full data.
+				proto.Send(smtp.Answer{
+					Status:  smtp.SyntaxError,
+					Message: "Could not parse mail data",
+				})
+				state.reset()
+				break
+
+			} else if err != nil {
+				panic(err)
+			}
+
+			fmt.Printf("'%s'\n", string(data))
+
+			// TODO: Handle the email
 
 		case smtp.RsetCmd:
 			state.reset()

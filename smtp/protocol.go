@@ -2,7 +2,10 @@ package smtp
 
 import (
 	"bufio"
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 )
@@ -14,12 +17,140 @@ const (
 	Ready             StatusCode = 220
 	Closing           StatusCode = 221
 	Ok                StatusCode = 250
+	StartData         StatusCode = 354
 	SyntaxError       StatusCode = 500
 	SyntaxErrorParam  StatusCode = 501
 	NotImplemented    StatusCode = 502
 	BadSequence       StatusCode = 503
+	AbortMail         StatusCode = 552
 	NoValidRecipients StatusCode = 554
 )
+
+// ErrLtl Line too long error
+var ErrLtl = errors.New("Line too long")
+
+// ErrIncomplete Incomplete data error
+var ErrIncomplete = errors.New("Incomplete data")
+
+type LimitedReader struct {
+	R     io.Reader // underlying reader
+	N     int       // max bytes remaining
+	Delim byte
+}
+
+func (l *LimitedReader) Read(p []byte) (int, error) {
+	if l.N <= 0 {
+		return 0, io.EOF
+	}
+
+	if len(p) > l.N {
+		p = p[0:l.N]
+	}
+
+	bytesRead := 0
+	buf := make([]byte, 1)
+	for l.N > 0 && bytesRead < len(p) {
+		n, err := l.R.Read(buf)
+
+		if n > 0 {
+			p[bytesRead] = buf[0]
+			l.N -= n
+			bytesRead += n
+			if buf[0] == l.Delim {
+				break
+			}
+
+		}
+
+		if err != nil {
+			return bytesRead, err
+		}
+	}
+
+	return bytesRead, nil
+}
+
+const (
+	MAX_LINE = 1000
+)
+
+// DataReader implements the reader that will read the data from a MAIL cmd
+type DataReader struct {
+	r      io.Reader
+	buffer []byte
+}
+
+func NewDataReader(r io.Reader) *DataReader {
+	dr := &DataReader{
+		r:      r,
+		buffer: make([]byte, 0, MAX_LINE),
+	}
+
+	return dr
+}
+
+func (r *DataReader) Read(p []byte) (int, error) {
+	var n int = 0
+
+	if len(r.buffer) > 0 {
+		n = copy(p, r.buffer)
+		r.buffer = r.buffer[n:]
+		return n, nil
+	}
+
+	limited := &LimitedReader{
+		R:     r.r,
+		N:     MAX_LINE + 1,
+		Delim: '\n',
+	}
+
+	br := bufio.NewReader(limited)
+
+	line, err := br.ReadBytes('\n')
+	lineLen := len(line)
+	if lineLen > 0 && line[len(line)-1] != '\n' {
+		buf := make([]byte, 1)
+
+		for n, err := r.r.Read(buf); ; {
+			if n > 0 {
+				if buf[0] == '\n' {
+					break
+				}
+			}
+
+			if err != nil {
+				break
+			}
+
+			n, err = r.r.Read(buf)
+		}
+	}
+	fmt.Printf("Read %d bytes\n", lineLen)
+
+	if bytes.Compare(line, []byte(".\r\n")) == 0 ||
+		bytes.Compare(line, []byte(".\r")) == 0 ||
+		bytes.Compare(line, []byte(".\n")) == 0 {
+
+		return 0, io.EOF
+	} else if lineLen > 2 && line[0] == '.' {
+		line = line[1:]
+		lineLen--
+	}
+
+	if lineLen > MAX_LINE {
+		return 0, ErrLtl
+	}
+
+	n = copy(p, line)
+	r.buffer = r.buffer[0 : lineLen-n]
+	copy(r.buffer, line[n:])
+
+	if err == io.EOF {
+		return 0, ErrIncomplete
+	}
+
+	return n, nil
+}
 
 // Cmd All SMTP answers/commands should implement this interface.
 type Cmd interface {
@@ -86,6 +217,7 @@ func (c RcptCmd) String() string {
 
 type DataCmd struct {
 	Data []byte
+	R    DataReader
 }
 
 func (c DataCmd) String() string {

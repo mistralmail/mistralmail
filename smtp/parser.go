@@ -61,62 +61,9 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 
 	case "DATA":
 		{
-			messageContent := []byte{}
-
-			for {
-				data, _ := br.ReadString('\n')
-
-				if data == ".\r\n" || data == ".\r" || data == ".\n" {
-					// the character sequence "<CRLF>.<CRLF>" ends the mail text
-					break
-				}
-				if data[0:2] == ".." {
-					/*
-						RFC 5321 4.5.2
-
-						Without some provision for data transparency, the character sequence
-						"<CRLF>.<CRLF>" ends the mail text and cannot be sent by the user.
-						In general, users are not aware of such "forbidden" sequences.  To
-						allow all user composed text to be transmitted transparently, the
-						following procedures are used:
-						o  Before sending a line of mail text, the SMTP client checks the
-						   first character of the line.  If it is a period, one additional
-						   period is inserted at the beginning of the line.
-						o  When a line of mail text is received by the SMTP server, it checks
-						   the line.  If the line is composed of a single period, it is
-						   treated as the end of mail indicator.  If the first character is a
-						   period and there are other characters on the line, the first
-						   character is deleted.
-					*/
-					data = data[1:len(data)]
-				}
-
-				// merge mail data
-				messageContent = append(messageContent, []byte(data)...)
-
-				// continue to get data
-				continue
-
-				// TODO break when there is no more content
-				// TODO check for content too long
-				/*
-					RFC 5321:
-					The maximum total length of a message content (including any message
-					header section as well as the message body) MUST BE at least 64K
-					octets.  Since the introduction of Internet Standards for multimedia
-					mail (RFC 2045 [21]), message lengths on the Internet have grown
-					dramatically, and message size restrictions should be avoided if at
-					all possible.  SMTP server systems that must impose restrictions
-					SHOULD implement the "SIZE" service extension of RFC 1870 [10], and
-					SMTP client systems that will send large messages SHOULD utilize it
-					when possible.
-
-					552 Too much mail data
-				*/
+			command = DataCmd{
+				R: *NewDataReader(br),
 			}
-
-			command = DataCmd{Data: messageContent}
-
 		}
 
 	case "RSET":
