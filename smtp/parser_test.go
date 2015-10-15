@@ -54,6 +54,32 @@ QUIT`
 
 	})
 
+	Convey("Testing parser DATA cmd", t, func() {
+		commands := "DATA\n"
+		commands += "Some usefull data.\n"
+		commands += ".\n"
+		commands += "QUIT"
+
+		br := bufio.NewReader(strings.NewReader(commands))
+		p := parser{}
+
+		command, err := p.ParseCommand(br)
+		So(err, ShouldEqual, nil)
+		So(command, ShouldHaveSameTypeAs, DataCmd{})
+		dataCommand, ok := command.(DataCmd)
+		So(ok, ShouldEqual, true)
+		br2 := bufio.NewReader(dataCommand.R.r)
+		line, _ := br2.ReadString('\n')
+		So(line, ShouldEqual, "Some usefull data.\n")
+		line, _ = br2.ReadString('\n')
+		So(line, ShouldEqual, ".\n")
+
+		command, err = p.ParseCommand(br)
+		So(err, ShouldEqual, nil)
+		So(command, ShouldHaveSameTypeAs, QuitCmd{})
+
+	})
+
 	Convey("Testing parseLine()", t, func() {
 
 		tests := []struct {
