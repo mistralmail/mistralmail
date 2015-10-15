@@ -1,12 +1,42 @@
 package smtp
 
 import (
+	"bufio"
 	_ "fmt"
 	. "github.com/smartystreets/goconvey/convey"
+	"strings"
 	"testing"
 )
 
 func TestParser(t *testing.T) {
+
+	Convey("Testing parser", t, func() {
+		commands :=
+			`HELO relay.example.org
+MAIL FROM:<bob@example.org>
+RCPT TO:<alice@example.com>
+RCPT TO:<theboss@example.com>
+QUIT`
+
+		br := bufio.NewReader(strings.NewReader(commands))
+
+		p := parser{}
+
+		expectedCommands := []Cmd{
+			HeloCmd{},
+			MailCmd{From: &MailAddress{Address: "bob@example.org"}},
+			RcptCmd{To: &MailAddress{Address: "alice@example.com"}},
+			RcptCmd{To: &MailAddress{Address: "theboss@example.com"}},
+			QuitCmd{},
+		}
+
+		for _, expectedCommand := range expectedCommands {
+			command, err := p.ParseCommand(br)
+			So(err, ShouldEqual, nil)
+			So(command, ShouldResemble, expectedCommand)
+		}
+
+	})
 
 	Convey("Testing parseLine()", t, func() {
 
