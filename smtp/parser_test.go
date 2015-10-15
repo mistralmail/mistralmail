@@ -13,9 +13,17 @@ func TestParser(t *testing.T) {
 	Convey("Testing parser", t, func() {
 		commands :=
 			`HELO relay.example.org
+EHLO other.example.org
 MAIL FROM:<bob@example.org>
 RCPT TO:<alice@example.com>
 RCPT TO:<theboss@example.com>
+SEND
+SOML
+SAML
+RSET
+VRFY jones
+EXPN staff
+NOOP
 QUIT`
 
 		br := bufio.NewReader(strings.NewReader(commands))
@@ -23,10 +31,18 @@ QUIT`
 		p := parser{}
 
 		expectedCommands := []Cmd{
-			HeloCmd{},
+			HeloCmd{Domain: "relay.example.org"},
+			EhloCmd{Domain: "other.example.org"},
 			MailCmd{From: &MailAddress{Address: "bob@example.org"}},
 			RcptCmd{To: &MailAddress{Address: "alice@example.com"}},
 			RcptCmd{To: &MailAddress{Address: "theboss@example.com"}},
+			SendCmd{},
+			SomlCmd{},
+			SamlCmd{},
+			RsetCmd{},
+			VrfyCmd{Param: "jones"},
+			ExpnCmd{ListName: "staff"},
+			NoopCmd{},
 			QuitCmd{},
 		}
 
