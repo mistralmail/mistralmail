@@ -80,6 +80,34 @@ QUIT`
 
 	})
 
+	Convey("Testing parser with invalid commands", t, func() {
+
+		commands := `RCPT
+RCPT TO:some invalid email
+MAIL
+MAIL To some@invalid
+UNKN some unknown command`
+
+		br := bufio.NewReader(strings.NewReader(commands))
+
+		p := parser{}
+
+		expectedCommands := []Cmd{
+			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
+			InvalidCmd{Cmd: "RCPT", Info: "Expected @ in mail address"},
+			InvalidCmd{Cmd: "MAIL", Info: "No FROM given"},
+			InvalidCmd{Cmd: "MAIL", Info: "No FROM given (didn't find ':')"},
+			UnknownCmd{Cmd: "UNKN some unknown command"},
+		}
+
+		for _, expectedCommand := range expectedCommands {
+			command, err := p.ParseCommand(br)
+			So(err, ShouldEqual, nil)
+			So(command, ShouldResemble, expectedCommand)
+		}
+
+	})
+
 	Convey("Testing parseLine()", t, func() {
 
 		tests := []struct {

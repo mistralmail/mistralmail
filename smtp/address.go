@@ -37,6 +37,9 @@ func ParseAddress(rawAddress string) (MailAddress, error) {
 	      The maximum total length of a domain name or number is 255 octets.
 	*/
 	index := strings.LastIndex(rawAddress, "@")
+	if index == -1 {
+		return MailAddress{}, errors.New("Expected @ in mail address")
+	}
 	rawLocal := rawAddress[0:index]
 	if len(rawLocal) > 64 {
 		return MailAddress{}, errors.New("Length of local part exceeds 64")
