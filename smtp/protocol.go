@@ -186,6 +186,7 @@ func (c HeloCmd) String() string {
 }
 
 type EhloCmd struct {
+	Domain string
 }
 
 func (c EhloCmd) String() string {
@@ -238,13 +239,17 @@ func (c NoopCmd) String() string {
 }
 
 // Not implemented because of security concerns
-type VrfyCmd struct{}
+type VrfyCmd struct {
+	Param string
+}
 
 func (c VrfyCmd) String() string {
 	return ""
 }
 
-type ExpnCmd struct{}
+type ExpnCmd struct {
+	ListName string
+}
 
 func (c ExpnCmd) String() string {
 	return ""

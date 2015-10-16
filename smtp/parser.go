@@ -39,12 +39,12 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 
 	case "HELO":
 		{
-			command = HeloCmd{}
+			command = HeloCmd{Domain: args[0]}
 		}
 
 	case "EHLO":
 		{
-			command = EhloCmd{}
+			command = EhloCmd{Domain: args[0]}
 		}
 
 	case "MAIL":
@@ -61,6 +61,7 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 
 	case "DATA":
 		{
+			// TODO: write tests for this
 			command = DataCmd{
 				R: *NewDataReader(br),
 			}
@@ -109,12 +110,12 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 					conformance.
 				From what I have read, 502 is better than 252...
 			*/
-			command = VrfyCmd{}
+			command = VrfyCmd{Param: args[0]}
 		}
 
 	case "EXPN":
 		{
-			command = ExpnCmd{}
+			command = ExpnCmd{ListName: args[0]}
 		}
 
 	case "NOOP":
