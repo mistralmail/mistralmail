@@ -2,9 +2,9 @@ package mta
 
 import (
 	"bytes"
+	. "github.com/smartystreets/goconvey/convey"
 	"log"
 	"testing"
-	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/gopistolet/gopistolet/smtp"
 )
@@ -21,33 +21,21 @@ func getMailWithoutError(a string) *smtp.MailAddress {
 }
 
 func (p *testProtocol) Send(cmd smtp.Cmd) {
-	if len(p.answers) <= 0 {
-		p.t.Errorf("Did not expect an answer got: %v", cmd)
-		return
-	}
+	So(len(p.answers), ShouldBeGreaterThan, 0)
 
 	log.Printf("%#v\n", cmd)
 
 	cmdA, ok := cmd.(smtp.Answer)
-	if !ok {
-		p.t.Errorf("Expected cmd.Answer got %t", cmd)
-		return
-	}
+	So(ok, ShouldEqual, true)
 
 	answer := p.answers[0]
 	p.answers = p.answers[1:]
 
-	if answer.Status != cmdA.Status {
-		p.t.Errorf("Expected answer %d, got %d", answer.Status, cmdA.Status)
-		return
-	}
+	So(answer.Status, ShouldEqual, cmdA.Status)
 }
 
 func (p *testProtocol) GetCmd() (*smtp.Cmd, bool) {
-	if len(p.cmds) <= 0 {
-		p.t.Errorf("Did not expect to send a cmd")
-		return nil, false
-	}
+	So(len(p.cmds), ShouldBeGreaterThan, 0)
 
 	cmd := p.cmds[0]
 	p.cmds = p.cmds[1:]
@@ -60,31 +48,27 @@ func (p *testProtocol) GetCmd() (*smtp.Cmd, bool) {
 }
 
 func (p *testProtocol) Close() {
-	if len(p.cmds) > 0 {
-		p.t.Errorf("Did not expect connection to be closed, got more commands: %v", p.cmds)
-		return
-	}
+	// Did not expect connection to be closed, got more commands
+	So(len(p.cmds), ShouldBeLessThanOrEqualTo, 0)
 
-	if len(p.answers) > 0 {
-		p.t.Errorf("Did not expect connection to be closed, need more answers: %v", p.answers)
-		return
-	}
+	// Did not expect connection to be closed, need more answers
+	So(len(p.answers), ShouldBeLessThanOrEqualTo, 0)
 }
 
 // Tests answers for HELO and QUIT
 func TestAnswersHeloQuit(t *testing.T) {
-	
+
 	Convey("Testing answers for HELO and QUIT", t, func() {
-	
+
 		cfg := Config{
 			Hostname: "home.sweet.home",
 		}
-	
+
 		mta := New(cfg)
 		if mta == nil {
 			t.Fatal("Could not create mta server")
 		}
-	
+
 		// Test connection with HELO and QUIT
 		proto := &testProtocol{
 			t: t,
@@ -110,7 +94,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
-	
+
 		// Test connection with HELO followed by closing the connection
 		proto = &testProtocol{
 			t: t,
@@ -132,24 +116,24 @@ func TestAnswersHeloQuit(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
-		
+
 	})
 }
 
 // Test answers if we are giving a correct sequence of MAIL,RCPT,DATA commands.
 func TestMailAnswersCorrectSequence(t *testing.T) {
-	
+
 	Convey("Testing answers for correct sequence of MAIL,RCPT,DATA commands.", t, func() {
-	
+
 		cfg := Config{
 			Hostname: "home.sweet.home",
 		}
-	
+
 		mta := New(cfg)
 		if mta == nil {
 			t.Fatal("Could not create mta server")
 		}
-	
+
 		proto := &testProtocol{
 			t: t,
 			cmds: []smtp.Cmd{
@@ -202,24 +186,24 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
-		
+
 	})
 }
 
 // Tests answers if we are giving a wrong sequence of MAIL,RCPT,DATA commands.
 func TestMailAnswersWrongSequence(t *testing.T) {
-	
+
 	Convey("Testing wrong sequence of MAIL,RCPT,DATA commands.", t, func() {
-	
+
 		cfg := Config{
 			Hostname: "home.sweet.home",
 		}
-	
+
 		mta := New(cfg)
 		if mta == nil {
 			t.Fatal("Could not create mta server")
 		}
-	
+
 		// RCPT before MAIl
 		proto := &testProtocol{
 			t: t,
@@ -252,7 +236,7 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
-	
+
 		// DATA before MAIL
 		proto = &testProtocol{
 			t: t,
@@ -283,7 +267,7 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
-	
+
 		// DATA before RCPT
 		proto = &testProtocol{
 			t: t,
@@ -321,7 +305,7 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
-	
+
 		// Multiple MAIL
 		proto = &testProtocol{
 			t: t,
@@ -368,24 +352,24 @@ func TestMailAnswersWrongSequence(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
-		
+
 	})
 }
 
 // Tests if our state gets reset correctly.
 func TestReset(t *testing.T) {
-	
+
 	Convey("Testing reset", t, func() {
-	
+
 		cfg := Config{
 			Hostname: "home.sweet.home",
 		}
-	
+
 		mta := New(cfg)
 		if mta == nil {
 			t.Fatal("Could not create mta server")
 		}
-	
+
 		// Test if state gets reset after sending email
 		proto := &testProtocol{
 			t: t,
@@ -439,7 +423,7 @@ func TestReset(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
-	
+
 		// Test if we can reset state ourselves.
 		proto = &testProtocol{
 			t: t,
@@ -505,6 +489,6 @@ func TestReset(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
-		
+
 	})
 }
