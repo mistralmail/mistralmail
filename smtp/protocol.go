@@ -167,7 +167,7 @@ func (c Answer) String() string {
 	return fmt.Sprintf("%d %s", c.Status, c.Message)
 }
 
-// Known command with invalid arguments or syntax
+// InvalidCmd is a known command with invalid arguments or syntax
 type InvalidCmd struct {
 	// The command
 	Cmd  string
@@ -175,10 +175,10 @@ type InvalidCmd struct {
 }
 
 func (c InvalidCmd) String() string {
-	return fmt.Sprintf("%s", c.Cmd, c.Info)
+	return fmt.Sprintf("%s %s", c.Cmd, c.Info)
 }
 
-// InvalidCmd A command that is none of the other commands. i.e. not implemented
+// UnknownCmd is a command that is none of the other commands. i.e. not implemented
 type UnknownCmd struct {
 	// The command
 	Cmd string
