@@ -167,13 +167,24 @@ func (c Answer) String() string {
 	return fmt.Sprintf("%d %s", c.Status, c.Message)
 }
 
-// InvalidCmd A command that is none of the other commands.
+// Known command with invalid arguments or syntax
 type InvalidCmd struct {
+	// The command
+	Cmd  string
+	Info string
+}
+
+func (c InvalidCmd) String() string {
+	return fmt.Sprintf("%s", c.Cmd, c.Info)
+}
+
+// InvalidCmd A command that is none of the other commands. i.e. not implemented
+type UnknownCmd struct {
 	// The command
 	Cmd string
 }
 
-func (c InvalidCmd) String() string {
+func (c UnknownCmd) String() string {
 	return fmt.Sprintf("%s", c.Cmd)
 }
 

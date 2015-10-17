@@ -76,6 +76,13 @@ func TestParseAddress(t *testing.T) {
 			So(address.GetAddress(), ShouldEqual, mail.parsed.Address)
 		}
 
+		Convey("Testing ParseAddress() with invalid mail", func() {
+
+			_, err := ParseAddress("some mail address without at sign")
+			So(err, ShouldNotEqual, nil)
+
+		})
+
 	})
 
 }

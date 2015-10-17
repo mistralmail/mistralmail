@@ -50,13 +50,23 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 	case "MAIL":
 		{
 			address, err = parseFROM(args)
-			command = MailCmd{From: address}
+			if err != nil {
+				command = InvalidCmd{Cmd: verb, Info: err.Error()}
+				err = nil
+			} else {
+				command = MailCmd{From: address}
+			}
 		}
 
 	case "RCPT":
 		{
 			address, err = parseTO(args)
-			command = RcptCmd{To: address}
+			if err != nil {
+				command = InvalidCmd{Cmd: verb, Info: err.Error()}
+				err = nil
+			} else {
+				command = RcptCmd{To: address}
+			}
 		}
 
 	case "DATA":
@@ -130,7 +140,7 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 
 	default:
 		{
-			command = InvalidCmd{Cmd: line}
+			command = UnknownCmd{Cmd: line}
 		}
 
 	}
