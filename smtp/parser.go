@@ -184,6 +184,10 @@ func parseFROM(args []string) (*MailAddress, error) {
 	if index == -1 {
 		return nil, errors.New("No FROM given (didn't find ':')")
 	}
+	if strings.ToLower(joined_args[0:index]) != "from" {
+		return nil, errors.New("No FROM given")
+	}
+	
 	address_str := joined_args[index+1 : len(joined_args)]
 
 	address, err := ParseAddress(address_str)
@@ -205,6 +209,10 @@ func parseTO(args []string) (*MailAddress, error) {
 	if index == -1 {
 		return nil, errors.New("No TO given (didn't find ':')")
 	}
+	if strings.ToLower(joined_args[0:index]) != "to" {
+		return nil, errors.New("No TO given")
+	}
+	
 	address_str := joined_args[index+1 : len(joined_args)]
 
 	address, err := ParseAddress(address_str)

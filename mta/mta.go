@@ -270,12 +270,26 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 			})
 
 		case smtp.InvalidCmd:
+			// TODO: Is this correct? An InvalidCmd is a known command with
+			// invalid arguments. So we should send smtp.SyntaxErrorParam?
+			// Is InvalidCmd a good name for this kind of error?
 			proto.Send(smtp.Answer{
-				Status:  smtp.SyntaxError,
-				Message: "Command unrecognized",
+				Status:  smtp.SyntaxErrorParam,
+				Message: cmd.Info,
 			})
 
+		case smtp.UnknownCmd:
+			proto.Send(smtp.Answer{
+				Status:  smtp.SyntaxError,
+				Message: "Command not recognized",
+			})
+			
+
 		default:
+			// TODO: We get here if the switch does not handle all Cmd's defined
+			// in protocol.go. That means we forgot to add it here. This should ideally
+			// be checked at compile time. But if we get here anyway we probably shouldn't
+			// crash...
 			log.Fatalf("Command not implemented: %#v", cmd)
 		}
 

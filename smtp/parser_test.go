@@ -84,7 +84,13 @@ QUIT`
 
 		commands := `RCPT
 RCPT TO:some invalid email
+rcpt :valid@mail.be
+RCPT :valid@mail.be
+RCPT TA:valid@mail.be
 MAIL
+MAIL from:some invalid email
+MAIL :valid@mail.be
+MAIL FROA:valid@mail.be
 MAIL To some@invalid
 UNKN some unknown command`
 
@@ -95,6 +101,12 @@ UNKN some unknown command`
 		expectedCommands := []Cmd{
 			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
 			InvalidCmd{Cmd: "RCPT", Info: "Expected @ in mail address"},
+			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
+			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
+			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
+			InvalidCmd{Cmd: "MAIL", Info: "No FROM given"},
+			InvalidCmd{Cmd: "MAIL", Info: "Expected @ in mail address"},
+			InvalidCmd{Cmd: "MAIL", Info: "No FROM given"},
 			InvalidCmd{Cmd: "MAIL", Info: "No FROM given"},
 			InvalidCmd{Cmd: "MAIL", Info: "No FROM given (didn't find ':')"},
 			UnknownCmd{Cmd: "UNKN some unknown command"},

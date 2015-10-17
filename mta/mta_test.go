@@ -492,3 +492,51 @@ func TestReset(t *testing.T) {
 
 	})
 }
+
+// Tests answers if we send an unknown command.
+func TestAnswersUnknownCmd(t *testing.T) {
+
+	Convey("Testing answers for unknown cmds", t, func() {
+
+		cfg := Config{
+			Hostname: "home.sweet.home",
+		}
+
+		mta := New(cfg)
+		if mta == nil {
+			t.Fatal("Could not create mta server")
+		}
+
+		proto := &testProtocol{
+			t: t,
+			cmds: []smtp.Cmd{
+				smtp.HeloCmd{
+					Domain: "some.sender",
+				},
+				smtp.UnknownCmd{
+					Cmd: "someinvalidcmd",
+				},
+				smtp.QuitCmd{},
+			},
+			answers: []smtp.Answer{
+				smtp.Answer{
+					Status:  smtp.Ready,
+					Message: cfg.Hostname + " Service Ready",
+				},
+				smtp.Answer{
+					Status:  smtp.Ok,
+					Message: "OK",
+				},
+				smtp.Answer{
+					Status:  smtp.SyntaxError,
+					Message: cfg.Hostname,
+				},
+				smtp.Answer{
+					Status:  smtp.Closing,
+					Message: "Bye!",
+				},
+			},
+		}
+		mta.HandleClient(proto)
+	})
+}
