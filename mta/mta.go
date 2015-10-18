@@ -157,6 +157,16 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				Message: s.config.Hostname,
 			})
 
+		case smtp.EhloCmd:
+			state.reset()
+
+			proto.Send(smtp.EhloAnswer{
+				Status: smtp.Ok,
+				Messages: []string{
+					s.config.Hostname,
+				},
+			})
+
 		case smtp.QuitCmd:
 			proto.Send(smtp.Answer{
 				Status:  smtp.Closing,

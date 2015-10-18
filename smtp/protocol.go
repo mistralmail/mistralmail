@@ -167,6 +167,28 @@ func (c Answer) String() string {
 	return fmt.Sprintf("%d %s", c.Status, c.Message)
 }
 
+// EhloAnswer An answer for EHLO.
+type EhloAnswer struct {
+	Status   StatusCode
+	Messages []string
+}
+
+func (c EhloAnswer) String() string {
+	if len(c.Messages) == 0 {
+		return fmt.Sprintf("%d", c.Status)
+	}
+
+	result := ""
+	for i := 0; i < len(c.Messages)-1; i++ {
+		result += fmt.Sprintf("%d-%s", c.Status, c.Messages[i])
+		result += "\n"
+	}
+
+	result += fmt.Sprintf("%d %s", c.Status, c.Messages[len(c.Messages)-1])
+
+	return result
+}
+
 // InvalidCmd is a known command with invalid arguments or syntax
 type InvalidCmd struct {
 	// The command
@@ -181,7 +203,7 @@ func (c InvalidCmd) String() string {
 // UnknownCmd is a command that is none of the other commands. i.e. not implemented
 type UnknownCmd struct {
 	// The command
-	Cmd string
+	Cmd  string
 	Line string
 }
 
