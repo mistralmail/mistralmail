@@ -215,17 +215,14 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				break
 			}
 
-			state.reset()
-
 			proto.Send(smtp.Answer{
 				Status:  smtp.StartData,
 				Message: "Start mail input; end with <CRLF>.<CRLF>",
 			})
 
-			data := []byte{}
 		tryAgain:
 			tmpData, err := ioutil.ReadAll(&cmd.R)
-			data = append(data, tmpData...)
+			state.data = append(state.data, tmpData...)
 			if err == smtp.ErrLtl {
 				proto.Send(smtp.Answer{
 					// SyntaxError or 552 error? or something else?
@@ -249,6 +246,9 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 			fmt.Printf("Received mail. State: %v\n", state)
 
 			// TODO: Handle the email
+
+			// Reset state after mail was handled so we can start from a clean slate.
+			state.reset()
 
 		case smtp.RsetCmd:
 			state.reset()
