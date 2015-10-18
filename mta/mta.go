@@ -247,6 +247,11 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 
 			// TODO: Handle the email
 
+			proto.Send(smtp.Answer{
+				Status:  smtp.Ok,
+				Message: "Mail delivered",
+			})
+
 			// Reset state after mail was handled so we can start from a clean slate.
 			state.reset()
 

@@ -2,9 +2,10 @@ package mta
 
 import (
 	"bytes"
-	. "github.com/smartystreets/goconvey/convey"
 	"log"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/gopistolet/gopistolet/smtp"
 )
@@ -177,6 +178,10 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 				},
 				smtp.Answer{
 					Status:  smtp.StartData,
+					Message: "OK",
+				},
+				smtp.Answer{
+					Status:  smtp.Ok,
 					Message: "OK",
 				},
 				smtp.Answer{
@@ -413,6 +418,10 @@ func TestReset(t *testing.T) {
 					Message: "OK",
 				},
 				smtp.Answer{
+					Status:  smtp.Ok,
+					Message: "OK",
+				},
+				smtp.Answer{
 					Status:  smtp.BadSequence,
 					Message: "Need mail before RCPT",
 				},
@@ -480,6 +489,10 @@ func TestReset(t *testing.T) {
 				},
 				smtp.Answer{
 					Status:  smtp.StartData,
+					Message: "OK",
+				},
+				smtp.Answer{
+					Status:  smtp.Ok,
 					Message: "OK",
 				},
 				smtp.Answer{
