@@ -11,7 +11,7 @@ import (
 type testProtocol struct {
 	t       *testing.T
 	cmds    []smtp.Cmd
-	answers []smtp.Answer
+	answers []interface{}
 }
 
 func getMailWithoutError(a string) *smtp.MailAddress {
@@ -24,13 +24,20 @@ func (p *testProtocol) Send(cmd smtp.Cmd) {
 
 	//c.Printf("RECEIVED: %#v\n", cmd)
 
-	cmdA, ok := cmd.(smtp.Answer)
-	c.So(ok, c.ShouldEqual, true)
-
 	answer := p.answers[0]
 	p.answers = p.answers[1:]
 
-	c.So(answer.Status, c.ShouldEqual, cmdA.Status)
+	if cmdA, ok := cmd.(smtp.Answer); ok {
+		c.So(answer, c.ShouldHaveSameTypeAs, cmdA)
+		cmdE, _ := answer.(smtp.Answer)
+		c.So(cmdE.Status, c.ShouldEqual, cmdA.Status)
+	} else if cmdA, ok := cmd.(smtp.MultiAnswer); ok {
+		c.So(answer, c.ShouldHaveSameTypeAs, cmdA)
+		cmdE, _ := answer.(smtp.MultiAnswer)
+		c.So(cmdE.Status, c.ShouldEqual, cmdA.Status)
+	} else {
+		p.t.Fatalf("Answer should be Answer or MultiAnswer")
+	}
 }
 
 func (p *testProtocol) GetCmd() (*smtp.Cmd, bool) {
@@ -55,7 +62,7 @@ func (p *testProtocol) Close() {
 	c.So(len(p.answers), c.ShouldBeLessThanOrEqualTo, 0)
 }
 
-// Tests answers for HELO and QUIT
+// Tests answers for HELO,EHLO and QUIT
 func TestAnswersHeloQuit(t *testing.T) {
 	cfg := Config{
 		Hostname: "home.sweet.home",
@@ -77,7 +84,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 				},
 				smtp.QuitCmd{},
 			},
-			answers: []smtp.Answer{
+			answers: []interface{}{
 				smtp.Answer{
 					Status:  smtp.Ready,
 					Message: cfg.Hostname + " Service Ready",
@@ -104,7 +111,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 				},
 				nil,
 			},
-			answers: []smtp.Answer{
+			answers: []interface{}{
 				smtp.Answer{
 					Status:  smtp.Ready,
 					Message: cfg.Hostname + " Service Ready",
@@ -112,6 +119,57 @@ func TestAnswersHeloQuit(t *testing.T) {
 				smtp.Answer{
 					Status:  smtp.Ok,
 					Message: cfg.Hostname,
+				},
+			},
+		}
+		mta.HandleClient(proto)
+
+	})
+
+	c.Convey("Testing answers for EHLO and QUIT.", t, func() {
+
+		// Test connection with EHLO and QUIT
+		proto := &testProtocol{
+			t: t,
+			cmds: []smtp.Cmd{
+				smtp.EhloCmd{
+					Domain: "some.sender",
+				},
+				smtp.QuitCmd{},
+			},
+			answers: []interface{}{
+				smtp.Answer{
+					Status:  smtp.Ready,
+					Message: cfg.Hostname + " Service Ready",
+				},
+				smtp.MultiAnswer{
+					Status: smtp.Ok,
+				},
+				smtp.Answer{
+					Status:  smtp.Closing,
+					Message: "Bye!",
+				},
+			},
+		}
+		mta.HandleClient(proto)
+	})
+
+	c.Convey("Testing answers for EHLO and close connection.", t, func() {
+		proto := &testProtocol{
+			t: t,
+			cmds: []smtp.Cmd{
+				smtp.EhloCmd{
+					Domain: "some.sender",
+				},
+				nil,
+			},
+			answers: []interface{}{
+				smtp.Answer{
+					Status:  smtp.Ready,
+					Message: cfg.Hostname + " Service Ready",
+				},
+				smtp.MultiAnswer{
+					Status: smtp.Ok,
 				},
 			},
 		}
@@ -153,7 +211,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 				},
 				smtp.QuitCmd{},
 			},
-			answers: []smtp.Answer{
+			answers: []interface{}{
 				smtp.Answer{
 					Status:  smtp.Ready,
 					Message: cfg.Hostname + " Service Ready",
@@ -204,7 +262,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					},
 					smtp.QuitCmd{},
 				},
-				answers: []smtp.Answer{
+				answers: []interface{}{
 					smtp.Answer{
 						Status:  smtp.Ready,
 						Message: cfg.Hostname + " Service Ready",
@@ -236,7 +294,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					smtp.DataCmd{},
 					smtp.QuitCmd{},
 				},
-				answers: []smtp.Answer{
+				answers: []interface{}{
 					smtp.Answer{
 						Status:  smtp.Ready,
 						Message: cfg.Hostname + " Service Ready",
@@ -271,7 +329,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					smtp.DataCmd{},
 					smtp.QuitCmd{},
 				},
-				answers: []smtp.Answer{
+				answers: []interface{}{
 					smtp.Answer{
 						Status:  smtp.Ready,
 						Message: cfg.Hostname + " Service Ready",
@@ -315,7 +373,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					},
 					smtp.QuitCmd{},
 				},
-				answers: []smtp.Answer{
+				answers: []interface{}{
 					smtp.Answer{
 						Status:  smtp.Ready,
 						Message: cfg.Hostname + " Service Ready",
@@ -382,7 +440,7 @@ func TestReset(t *testing.T) {
 					},
 					smtp.QuitCmd{},
 				},
-				answers: []smtp.Answer{
+				answers: []interface{}{
 					smtp.Answer{
 						Status:  smtp.Ready,
 						Message: cfg.Hostname + " Service Ready",
@@ -445,7 +503,7 @@ func TestReset(t *testing.T) {
 					},
 					smtp.QuitCmd{},
 				},
-				answers: []smtp.Answer{
+				answers: []interface{}{
 					smtp.Answer{
 						Status:  smtp.Ready,
 						Message: cfg.Hostname + " Service Ready",
@@ -465,6 +523,78 @@ func TestReset(t *testing.T) {
 					smtp.Answer{
 						Status:  smtp.Ok,
 						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.StartData,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Closing,
+						Message: "Bye!",
+					},
+				},
+			}
+			mta.HandleClient(proto)
+		})
+
+		// EHLO should reset state.
+		c.Convey("Reset with EHLO", func() {
+			proto := &testProtocol{
+				t: t,
+				cmds: []smtp.Cmd{
+					smtp.EhloCmd{
+						Domain: "some.sender",
+					},
+					smtp.MailCmd{
+						From: getMailWithoutError("someone@somewhere.test"),
+					},
+					smtp.RcptCmd{
+						To: getMailWithoutError("guy1@somewhere.test"),
+					},
+					smtp.EhloCmd{
+						Domain: "some.sender",
+					},
+					smtp.MailCmd{
+						From: getMailWithoutError("someone@somewhere.test"),
+					},
+					smtp.RcptCmd{
+						To: getMailWithoutError("guy1@somewhere.test"),
+					},
+					smtp.DataCmd{
+						R: *smtp.NewDataReader(bytes.NewReader([]byte("Some email\n.\n"))),
+					},
+					smtp.QuitCmd{},
+				},
+				answers: []interface{}{
+					smtp.Answer{
+						Status:  smtp.Ready,
+						Message: cfg.Hostname + " Service Ready",
+					},
+					smtp.MultiAnswer{
+						Status: smtp.Ok,
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.MultiAnswer{
+						Status: smtp.Ok,
 					},
 					smtp.Answer{
 						Status:  smtp.Ok,
@@ -517,7 +647,7 @@ func TestAnswersUnknownCmd(t *testing.T) {
 				},
 				smtp.QuitCmd{},
 			},
-			answers: []smtp.Answer{
+			answers: []interface{}{
 				smtp.Answer{
 					Status:  smtp.Ready,
 					Message: cfg.Hostname + " Service Ready",

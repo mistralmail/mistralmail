@@ -160,10 +160,11 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 		case smtp.EhloCmd:
 			state.reset()
 
-			proto.Send(smtp.EhloAnswer{
+			proto.Send(smtp.MultiAnswer{
 				Status: smtp.Ok,
 				Messages: []string{
 					s.config.Hostname,
+					"OK",
 				},
 			})
 

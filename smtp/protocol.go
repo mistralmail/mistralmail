@@ -167,13 +167,13 @@ func (c Answer) String() string {
 	return fmt.Sprintf("%d %s", c.Status, c.Message)
 }
 
-// EhloAnswer An answer for EHLO.
-type EhloAnswer struct {
+// MultiAnswer A multiline answer.
+type MultiAnswer struct {
 	Status   StatusCode
 	Messages []string
 }
 
-func (c EhloAnswer) String() string {
+func (c MultiAnswer) String() string {
 	if len(c.Messages) == 0 {
 		return fmt.Sprintf("%d", c.Status)
 	}
