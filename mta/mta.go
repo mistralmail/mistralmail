@@ -133,7 +133,7 @@ func (s *DefaultMta) serve(c net.Conn) {
 
 // HandleClient Start communicating with a client
 func (s *Mta) HandleClient(proto smtp.Protocol) {
-	log.Printf("Received connection")
+	//log.Printf("Received connection")
 
 	// Hold state for this client connection
 	state := state{}
@@ -148,7 +148,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 	c, ok := proto.GetCmd()
 	quit := false
 	for ok == true && quit == false {
-		log.Printf("Received cmd: %#v", *c)
+		//log.Printf("Received cmd: %#v", *c)
 
 		switch cmd := (*c).(type) {
 		case smtp.HeloCmd:
@@ -305,5 +305,5 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 	}
 
 	proto.Close()
-	log.Printf("Closed connection")
+	//log.Printf("Closed connection")
 }

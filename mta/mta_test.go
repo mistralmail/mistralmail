@@ -2,12 +2,10 @@ package mta
 
 import (
 	"bytes"
-	"log"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-
 	"github.com/gopistolet/gopistolet/smtp"
+	c "github.com/smartystreets/goconvey/convey"
 )
 
 type testProtocol struct {
@@ -22,21 +20,21 @@ func getMailWithoutError(a string) *smtp.MailAddress {
 }
 
 func (p *testProtocol) Send(cmd smtp.Cmd) {
-	So(len(p.answers), ShouldBeGreaterThan, 0)
+	c.So(len(p.answers), c.ShouldBeGreaterThan, 0)
 
-	log.Printf("%#v\n", cmd)
+	//c.Printf("RECEIVED: %#v\n", cmd)
 
 	cmdA, ok := cmd.(smtp.Answer)
-	So(ok, ShouldEqual, true)
+	c.So(ok, c.ShouldEqual, true)
 
 	answer := p.answers[0]
 	p.answers = p.answers[1:]
 
-	So(answer.Status, ShouldEqual, cmdA.Status)
+	c.So(answer.Status, c.ShouldEqual, cmdA.Status)
 }
 
 func (p *testProtocol) GetCmd() (*smtp.Cmd, bool) {
-	So(len(p.cmds), ShouldBeGreaterThan, 0)
+	c.So(len(p.cmds), c.ShouldBeGreaterThan, 0)
 
 	cmd := p.cmds[0]
 	p.cmds = p.cmds[1:]
@@ -45,30 +43,30 @@ func (p *testProtocol) GetCmd() (*smtp.Cmd, bool) {
 		return nil, false
 	}
 
+	//c.Printf("SENDING: %#v\n", cmd)
 	return &cmd, true
 }
 
 func (p *testProtocol) Close() {
 	// Did not expect connection to be closed, got more commands
-	So(len(p.cmds), ShouldBeLessThanOrEqualTo, 0)
+	c.So(len(p.cmds), c.ShouldBeLessThanOrEqualTo, 0)
 
 	// Did not expect connection to be closed, need more answers
-	So(len(p.answers), ShouldBeLessThanOrEqualTo, 0)
+	c.So(len(p.answers), c.ShouldBeLessThanOrEqualTo, 0)
 }
 
 // Tests answers for HELO and QUIT
 func TestAnswersHeloQuit(t *testing.T) {
+	cfg := Config{
+		Hostname: "home.sweet.home",
+	}
 
-	Convey("Testing answers for HELO and QUIT", t, func() {
+	mta := New(cfg)
+	if mta == nil {
+		t.Fatal("Could not create mta server")
+	}
 
-		cfg := Config{
-			Hostname: "home.sweet.home",
-		}
-
-		mta := New(cfg)
-		if mta == nil {
-			t.Fatal("Could not create mta server")
-		}
+	c.Convey("Testing answers for HELO and QUIT.", t, func() {
 
 		// Test connection with HELO and QUIT
 		proto := &testProtocol{
@@ -95,9 +93,10 @@ func TestAnswersHeloQuit(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
+	})
 
-		// Test connection with HELO followed by closing the connection
-		proto = &testProtocol{
+	c.Convey("Testing answers for HELO and close connection.", t, func() {
+		proto := &testProtocol{
 			t: t,
 			cmds: []smtp.Cmd{
 				smtp.HeloCmd{
@@ -121,19 +120,18 @@ func TestAnswersHeloQuit(t *testing.T) {
 	})
 }
 
-// Test answers if we are giving a correct sequence of MAIL,RCPT,DATA commands.
+// Test answers if we are given a sequence of MAIL,RCPT,DATA commands.
 func TestMailAnswersCorrectSequence(t *testing.T) {
+	cfg := Config{
+		Hostname: "home.sweet.home",
+	}
 
-	Convey("Testing answers for correct sequence of MAIL,RCPT,DATA commands.", t, func() {
+	mta := New(cfg)
+	if mta == nil {
+		t.Fatal("Could not create mta server")
+	}
 
-		cfg := Config{
-			Hostname: "home.sweet.home",
-		}
-
-		mta := New(cfg)
-		if mta == nil {
-			t.Fatal("Could not create mta server")
-		}
+	c.Convey("Testing correct sequence of MAIL,RCPT,DATA commands.", t, func() {
 
 		proto := &testProtocol{
 			t: t,
@@ -191,335 +189,323 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 			},
 		}
 		mta.HandleClient(proto)
-
 	})
-}
 
-// Tests answers if we are giving a wrong sequence of MAIL,RCPT,DATA commands.
-func TestMailAnswersWrongSequence(t *testing.T) {
+	c.Convey("Testing wrong sequence of MAIL,RCPT,DATA commands.", t, func() {
+		c.Convey("RCPT before MAIL", func() {
+			proto := &testProtocol{
+				t: t,
+				cmds: []smtp.Cmd{
+					smtp.HeloCmd{
+						Domain: "some.sender",
+					},
+					smtp.RcptCmd{
+						To: getMailWithoutError("guy1@somewhere.test"),
+					},
+					smtp.QuitCmd{},
+				},
+				answers: []smtp.Answer{
+					smtp.Answer{
+						Status:  smtp.Ready,
+						Message: cfg.Hostname + " Service Ready",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: cfg.Hostname,
+					},
+					smtp.Answer{
+						Status:  smtp.BadSequence,
+						Message: "Need mail before RCPT",
+					},
+					smtp.Answer{
+						Status:  smtp.Closing,
+						Message: "Bye!",
+					},
+				},
+			}
+			mta.HandleClient(proto)
+		})
 
-	Convey("Testing wrong sequence of MAIL,RCPT,DATA commands.", t, func() {
+		c.Convey("DATA before MAIL", func() {
+			proto := &testProtocol{
+				t: t,
+				cmds: []smtp.Cmd{
+					smtp.HeloCmd{
+						Domain: "some.sender",
+					},
+					smtp.DataCmd{},
+					smtp.QuitCmd{},
+				},
+				answers: []smtp.Answer{
+					smtp.Answer{
+						Status:  smtp.Ready,
+						Message: cfg.Hostname + " Service Ready",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: cfg.Hostname,
+					},
+					smtp.Answer{
+						Status:  smtp.BadSequence,
+						Message: "Need mail before DATA",
+					},
+					smtp.Answer{
+						Status:  smtp.Closing,
+						Message: "Bye!",
+					},
+				},
+			}
+			mta.HandleClient(proto)
+		})
 
-		cfg := Config{
-			Hostname: "home.sweet.home",
-		}
+		c.Convey("DATA before RCPT", func() {
+			proto := &testProtocol{
+				t: t,
+				cmds: []smtp.Cmd{
+					smtp.HeloCmd{
+						Domain: "some.sender",
+					},
+					smtp.MailCmd{
+						From: getMailWithoutError("guy@somewhere.test"),
+					},
+					smtp.DataCmd{},
+					smtp.QuitCmd{},
+				},
+				answers: []smtp.Answer{
+					smtp.Answer{
+						Status:  smtp.Ready,
+						Message: cfg.Hostname + " Service Ready",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: cfg.Hostname,
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.BadSequence,
+						Message: "Need RCPT before DATA",
+					},
+					smtp.Answer{
+						Status:  smtp.Closing,
+						Message: "Bye!",
+					},
+				},
+			}
+			mta.HandleClient(proto)
+		})
 
-		mta := New(cfg)
-		if mta == nil {
-			t.Fatal("Could not create mta server")
-		}
-
-		// RCPT before MAIl
-		proto := &testProtocol{
-			t: t,
-			cmds: []smtp.Cmd{
-				smtp.HeloCmd{
-					Domain: "some.sender",
+		c.Convey("Multiple MAIL commands.", func() {
+			proto := &testProtocol{
+				t: t,
+				cmds: []smtp.Cmd{
+					smtp.HeloCmd{
+						Domain: "some.sender",
+					},
+					smtp.MailCmd{
+						From: getMailWithoutError("guy@somewhere.test"),
+					},
+					smtp.RcptCmd{
+						To: getMailWithoutError("someone@somewhere.test"),
+					},
+					smtp.MailCmd{
+						From: getMailWithoutError("someguy@somewhere.test"),
+					},
+					smtp.QuitCmd{},
 				},
-				smtp.RcptCmd{
-					To: getMailWithoutError("guy1@somewhere.test"),
+				answers: []smtp.Answer{
+					smtp.Answer{
+						Status:  smtp.Ready,
+						Message: cfg.Hostname + " Service Ready",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: cfg.Hostname,
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.BadSequence,
+						Message: "Sender already specified",
+					},
+					smtp.Answer{
+						Status:  smtp.Closing,
+						Message: "Bye!",
+					},
 				},
-				smtp.QuitCmd{},
-			},
-			answers: []smtp.Answer{
-				smtp.Answer{
-					Status:  smtp.Ready,
-					Message: cfg.Hostname + " Service Ready",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: cfg.Hostname,
-				},
-				smtp.Answer{
-					Status:  smtp.BadSequence,
-					Message: "Need mail before RCPT",
-				},
-				smtp.Answer{
-					Status:  smtp.Closing,
-					Message: "Bye!",
-				},
-			},
-		}
-		mta.HandleClient(proto)
-
-		// DATA before MAIL
-		proto = &testProtocol{
-			t: t,
-			cmds: []smtp.Cmd{
-				smtp.HeloCmd{
-					Domain: "some.sender",
-				},
-				smtp.DataCmd{},
-				smtp.QuitCmd{},
-			},
-			answers: []smtp.Answer{
-				smtp.Answer{
-					Status:  smtp.Ready,
-					Message: cfg.Hostname + " Service Ready",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: cfg.Hostname,
-				},
-				smtp.Answer{
-					Status:  smtp.BadSequence,
-					Message: "Need mail before DATA",
-				},
-				smtp.Answer{
-					Status:  smtp.Closing,
-					Message: "Bye!",
-				},
-			},
-		}
-		mta.HandleClient(proto)
-
-		// DATA before RCPT
-		proto = &testProtocol{
-			t: t,
-			cmds: []smtp.Cmd{
-				smtp.HeloCmd{
-					Domain: "some.sender",
-				},
-				smtp.MailCmd{
-					From: getMailWithoutError("guy@somewhere.test"),
-				},
-				smtp.DataCmd{},
-				smtp.QuitCmd{},
-			},
-			answers: []smtp.Answer{
-				smtp.Answer{
-					Status:  smtp.Ready,
-					Message: cfg.Hostname + " Service Ready",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: cfg.Hostname,
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.BadSequence,
-					Message: "Need RCPT before DATA",
-				},
-				smtp.Answer{
-					Status:  smtp.Closing,
-					Message: "Bye!",
-				},
-			},
-		}
-		mta.HandleClient(proto)
-
-		// Multiple MAIL
-		proto = &testProtocol{
-			t: t,
-			cmds: []smtp.Cmd{
-				smtp.HeloCmd{
-					Domain: "some.sender",
-				},
-				smtp.MailCmd{
-					From: getMailWithoutError("guy@somewhere.test"),
-				},
-				smtp.RcptCmd{
-					To: getMailWithoutError("someone@somewhere.test"),
-				},
-				smtp.MailCmd{
-					From: getMailWithoutError("someguy@somewhere.test"),
-				},
-				smtp.QuitCmd{},
-			},
-			answers: []smtp.Answer{
-				smtp.Answer{
-					Status:  smtp.Ready,
-					Message: cfg.Hostname + " Service Ready",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: cfg.Hostname,
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.BadSequence,
-					Message: "Sender already specified",
-				},
-				smtp.Answer{
-					Status:  smtp.Closing,
-					Message: "Bye!",
-				},
-			},
-		}
-		mta.HandleClient(proto)
+			}
+			mta.HandleClient(proto)
+		})
 
 	})
 }
 
 // Tests if our state gets reset correctly.
 func TestReset(t *testing.T) {
+	cfg := Config{
+		Hostname: "home.sweet.home",
+	}
 
-	Convey("Testing reset", t, func() {
+	mta := New(cfg)
+	if mta == nil {
+		t.Fatal("Could not create mta server")
+	}
 
-		cfg := Config{
-			Hostname: "home.sweet.home",
-		}
+	c.Convey("Testing reset", t, func() {
 
-		mta := New(cfg)
-		if mta == nil {
-			t.Fatal("Could not create mta server")
-		}
+		c.Convey("Test reset after sending mail.", func() {
+			proto := &testProtocol{
+				t: t,
+				cmds: []smtp.Cmd{
+					smtp.HeloCmd{
+						Domain: "some.sender",
+					},
+					smtp.MailCmd{
+						From: getMailWithoutError("someone@somewhere.test"),
+					},
+					smtp.RcptCmd{
+						To: getMailWithoutError("guy1@somewhere.test"),
+					},
+					smtp.DataCmd{
+						R: *smtp.NewDataReader(bytes.NewReader([]byte("Some email content\n.\n"))),
+					},
+					smtp.RcptCmd{
+						To: getMailWithoutError("someguy@somewhere.test"),
+					},
+					smtp.QuitCmd{},
+				},
+				answers: []smtp.Answer{
+					smtp.Answer{
+						Status:  smtp.Ready,
+						Message: cfg.Hostname + " Service Ready",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: cfg.Hostname,
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.StartData,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.BadSequence,
+						Message: "Need mail before RCPT",
+					},
+					smtp.Answer{
+						Status:  smtp.Closing,
+						Message: "Bye!",
+					},
+				},
+			}
+			mta.HandleClient(proto)
+		})
 
-		// Test if state gets reset after sending email
-		proto := &testProtocol{
-			t: t,
-			cmds: []smtp.Cmd{
-				smtp.HeloCmd{
-					Domain: "some.sender",
+		c.Convey("Manually reset", func() {
+			proto := &testProtocol{
+				t: t,
+				cmds: []smtp.Cmd{
+					smtp.HeloCmd{
+						Domain: "some.sender",
+					},
+					smtp.MailCmd{
+						From: getMailWithoutError("someone@somewhere.test"),
+					},
+					smtp.RcptCmd{
+						To: getMailWithoutError("guy1@somewhere.test"),
+					},
+					smtp.RsetCmd{},
+					smtp.MailCmd{
+						From: getMailWithoutError("someone@somewhere.test"),
+					},
+					smtp.RcptCmd{
+						To: getMailWithoutError("guy1@somewhere.test"),
+					},
+					smtp.DataCmd{
+						R: *smtp.NewDataReader(bytes.NewReader([]byte("Some email\n.\n"))),
+					},
+					smtp.QuitCmd{},
 				},
-				smtp.MailCmd{
-					From: getMailWithoutError("someone@somewhere.test"),
+				answers: []smtp.Answer{
+					smtp.Answer{
+						Status:  smtp.Ready,
+						Message: cfg.Hostname + " Service Ready",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: cfg.Hostname,
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.StartData,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Ok,
+						Message: "OK",
+					},
+					smtp.Answer{
+						Status:  smtp.Closing,
+						Message: "Bye!",
+					},
 				},
-				smtp.RcptCmd{
-					To: getMailWithoutError("guy1@somewhere.test"),
-				},
-				smtp.DataCmd{
-					R: *smtp.NewDataReader(bytes.NewReader([]byte("Some email content\n.\n"))),
-				},
-				smtp.RcptCmd{
-					To: getMailWithoutError("someguy@somewhere.test"),
-				},
-				smtp.QuitCmd{},
-			},
-			answers: []smtp.Answer{
-				smtp.Answer{
-					Status:  smtp.Ready,
-					Message: cfg.Hostname + " Service Ready",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: cfg.Hostname,
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.StartData,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.BadSequence,
-					Message: "Need mail before RCPT",
-				},
-				smtp.Answer{
-					Status:  smtp.Closing,
-					Message: "Bye!",
-				},
-			},
-		}
-		mta.HandleClient(proto)
-
-		// Test if we can reset state ourselves.
-		proto = &testProtocol{
-			t: t,
-			cmds: []smtp.Cmd{
-				smtp.HeloCmd{
-					Domain: "some.sender",
-				},
-				smtp.MailCmd{
-					From: getMailWithoutError("someone@somewhere.test"),
-				},
-				smtp.RcptCmd{
-					To: getMailWithoutError("guy1@somewhere.test"),
-				},
-				smtp.RsetCmd{},
-				smtp.MailCmd{
-					From: getMailWithoutError("someone@somewhere.test"),
-				},
-				smtp.RcptCmd{
-					To: getMailWithoutError("guy1@somewhere.test"),
-				},
-				smtp.DataCmd{
-					R: *smtp.NewDataReader(bytes.NewReader([]byte("Some email\n.\n"))),
-				},
-				smtp.QuitCmd{},
-			},
-			answers: []smtp.Answer{
-				smtp.Answer{
-					Status:  smtp.Ready,
-					Message: cfg.Hostname + " Service Ready",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: cfg.Hostname,
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.StartData,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.Ok,
-					Message: "OK",
-				},
-				smtp.Answer{
-					Status:  smtp.Closing,
-					Message: "Bye!",
-				},
-			},
-		}
-		mta.HandleClient(proto)
+			}
+			mta.HandleClient(proto)
+		})
 
 	})
 }
 
 // Tests answers if we send an unknown command.
 func TestAnswersUnknownCmd(t *testing.T) {
+	cfg := Config{
+		Hostname: "home.sweet.home",
+	}
 
-	Convey("Testing answers for unknown cmds", t, func() {
+	mta := New(cfg)
+	if mta == nil {
+		t.Fatal("Could not create mta server")
+	}
 
-		cfg := Config{
-			Hostname: "home.sweet.home",
-		}
-
-		mta := New(cfg)
-		if mta == nil {
-			t.Fatal("Could not create mta server")
-		}
-
+	c.Convey("Testing answers for unknown cmds.", t, func() {
 		proto := &testProtocol{
 			t: t,
 			cmds: []smtp.Cmd{
