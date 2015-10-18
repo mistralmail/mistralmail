@@ -108,27 +108,27 @@ UNKN some unknown command
 		p := parser{}
 
 		expectedCommands := []Cmd{
-			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
-			InvalidCmd{Cmd: "HELO", Info: "HELO requires valid address"},
-			InvalidCmd{Cmd: "EHLO", Info: "EHLO requires valid address"},
-			UnknownCmd{Cmd: "\n"},
-			UnknownCmd{Cmd: "  \n"},
-			InvalidCmd{Cmd: "RCPT", Info: "Expected @ in mail address"},
-			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
-			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
-			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
-			InvalidCmd{Cmd: "MAIL", Info: "No FROM given"},
-			InvalidCmd{Cmd: "MAIL", Info: "Expected @ in mail address"},
-			InvalidCmd{Cmd: "MAIL", Info: "No FROM given"},
-			InvalidCmd{Cmd: "MAIL", Info: "No FROM given"},
-			InvalidCmd{Cmd: "MAIL", Info: "No FROM given (didn't find ':')"},
-			UnknownCmd{Cmd: "UNKN some unknown command\n"},
+			InvalidCmd{},
+			InvalidCmd{},
+			InvalidCmd{},
+			UnknownCmd{},
+			UnknownCmd{},
+			InvalidCmd{},
+			InvalidCmd{},
+			InvalidCmd{},
+			InvalidCmd{},
+			InvalidCmd{},
+			InvalidCmd{},
+			InvalidCmd{},
+			InvalidCmd{},
+			InvalidCmd{},
+			UnknownCmd{},
 		}
 
 		for _, expectedCommand := range expectedCommands {
 			command, err := p.ParseCommand(br)
 			So(err, ShouldEqual, nil)
-			So(command, ShouldResemble, expectedCommand)
+			So(command, ShouldHaveSameTypeAs, expectedCommand)
 		}
 
 	})

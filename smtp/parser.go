@@ -156,7 +156,7 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 
 	default:
 		{
-			command = UnknownCmd{Cmd: line}
+			command = UnknownCmd{Cmd: verb, Line: strings.TrimSuffix(line, "\n")}
 		}
 
 	}

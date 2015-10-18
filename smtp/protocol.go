@@ -182,6 +182,7 @@ func (c InvalidCmd) String() string {
 type UnknownCmd struct {
 	// The command
 	Cmd string
+	Line string
 }
 
 func (c UnknownCmd) String() string {
