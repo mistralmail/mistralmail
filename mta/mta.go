@@ -246,7 +246,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				panic(err)
 			}
 
-			fmt.Printf("'%s'\n", string(data))
+			fmt.Printf("Received mail. State: %v\n", state)
 
 			// TODO: Handle the email
 
@@ -283,7 +283,6 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				Status:  smtp.SyntaxError,
 				Message: "Command not recognized",
 			})
-			
 
 		default:
 			// TODO: We get here if the switch does not handle all Cmd's defined

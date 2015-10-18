@@ -3,9 +3,10 @@ package smtp
 import (
 	"bufio"
 	_ "fmt"
-	. "github.com/smartystreets/goconvey/convey"
 	"strings"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestParser(t *testing.T) {
@@ -24,7 +25,8 @@ RSET
 VRFY jones
 EXPN staff
 NOOP
-QUIT`
+QUIT
+`
 
 		br := bufio.NewReader(strings.NewReader(commands))
 
@@ -55,10 +57,12 @@ QUIT`
 	})
 
 	Convey("Testing parser DATA cmd", t, func() {
-		commands := "DATA\n"
-		commands += "Some usefull data.\n"
-		commands += ".\n"
-		commands += "QUIT"
+		commands :=
+			`DATA
+Some usefull data.
+.
+quit
+`
 
 		br := bufio.NewReader(strings.NewReader(commands))
 		p := parser{}
@@ -83,6 +87,10 @@ QUIT`
 	Convey("Testing parser with invalid commands", t, func() {
 
 		commands := `RCPT
+helo
+ehlo
+
+  
 RCPT TO:some invalid email
 rcpt :valid@mail.be
 RCPT :valid@mail.be
@@ -92,7 +100,8 @@ MAIL from:some invalid email
 MAIL :valid@mail.be
 MAIL FROA:valid@mail.be
 MAIL To some@invalid
-UNKN some unknown command`
+UNKN some unknown command
+`
 
 		br := bufio.NewReader(strings.NewReader(commands))
 
@@ -100,6 +109,10 @@ UNKN some unknown command`
 
 		expectedCommands := []Cmd{
 			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
+			InvalidCmd{Cmd: "HELO", Info: "HELO requires valid address"},
+			InvalidCmd{Cmd: "EHLO", Info: "EHLO requires valid address"},
+			UnknownCmd{Cmd: "\n"},
+			UnknownCmd{Cmd: "  \n"},
 			InvalidCmd{Cmd: "RCPT", Info: "Expected @ in mail address"},
 			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
 			InvalidCmd{Cmd: "RCPT", Info: "No TO given"},
@@ -109,7 +122,7 @@ UNKN some unknown command`
 			InvalidCmd{Cmd: "MAIL", Info: "No FROM given"},
 			InvalidCmd{Cmd: "MAIL", Info: "No FROM given"},
 			InvalidCmd{Cmd: "MAIL", Info: "No FROM given (didn't find ':')"},
-			UnknownCmd{Cmd: "UNKN some unknown command"},
+			UnknownCmd{Cmd: "UNKN some unknown command\n"},
 		}
 
 		for _, expectedCommand := range expectedCommands {

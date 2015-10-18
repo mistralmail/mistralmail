@@ -323,6 +323,7 @@ func (p *MtaProtocol) GetCmd() (c *Cmd, ok bool) {
 	cmd, err := p.parser.ParseCommand(p.br)
 	if err != nil {
 		log.Printf("Could not parse command: %v", err)
+		return nil, false
 	}
 
 	return &cmd, true
