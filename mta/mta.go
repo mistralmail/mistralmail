@@ -14,23 +14,35 @@ type Config struct {
 	Port     uint32
 }
 
-// state contains all the state for a single client
-type state struct {
-	from *smtp.MailAddress
-	to   []*smtp.MailAddress
-	data []byte
+// State contains all the state for a single client
+type State struct {
+	From *smtp.MailAddress
+	To   []*smtp.MailAddress
+	Data []byte
+}
+
+// Handler is the interface that will be used when a mail was received.
+type Handler interface {
+	HandleMail(*State)
+}
+
+// HandlerFunc is a wrapper to allow normal functions to be used as a handler.
+type HandlerFunc func(*State)
+
+func (h HandlerFunc) HandleMail(state *State) {
+	h(state)
 }
 
 // reset the state
-func (s *state) reset() {
-	s.from = nil
-	s.to = []*smtp.MailAddress{}
-	s.data = []byte{}
+func (s *State) reset() {
+	s.From = nil
+	s.To = []*smtp.MailAddress{}
+	s.Data = []byte{}
 }
 
 // Checks the state if the client can send a MAIL command.
-func (s *state) canReceiveMail() (bool, string) {
-	if s.from != nil {
+func (s *State) canReceiveMail() (bool, string) {
+	if s.From != nil {
 		return false, "Sender already specified"
 	}
 
@@ -38,8 +50,8 @@ func (s *state) canReceiveMail() (bool, string) {
 }
 
 // Checks the state if the client can send a RCPT command.
-func (s *state) canReceiveRcpt() (bool, string) {
-	if s.from == nil {
+func (s *State) canReceiveRcpt() (bool, string) {
+	if s.From == nil {
 		return false, "Need mail before RCPT"
 	}
 
@@ -47,12 +59,12 @@ func (s *state) canReceiveRcpt() (bool, string) {
 }
 
 // Checks the state if the client can send a DATA command.
-func (s *state) canReceiveData() (bool, string) {
-	if s.from == nil {
+func (s *State) canReceiveData() (bool, string) {
+	if s.From == nil {
 		return false, "Need mail before DATA"
 	}
 
-	if len(s.to) == 0 {
+	if len(s.To) == 0 {
 		return false, "Need RCPT before DATA"
 	}
 
@@ -62,12 +74,15 @@ func (s *state) canReceiveData() (bool, string) {
 // Mta Represents an MTA server
 type Mta struct {
 	config Config
+	// The handler to be called when a mail is received.
+	MailHandler Handler
 }
 
 // New Create a new MTA server that doesn't handle the protocol.
-func New(c Config) *Mta {
+func New(c Config, h Handler) *Mta {
 	mta := &Mta{
-		config: c,
+		config:      c,
+		MailHandler: h,
 	}
 
 	return mta
@@ -80,9 +95,9 @@ type DefaultMta struct {
 
 // NewDefault Create a new MTA server with a
 // socket protocol implementation.
-func NewDefault(c Config) *DefaultMta {
+func NewDefault(c Config, h Handler) *DefaultMta {
 	mta := &DefaultMta{
-		mta: New(c),
+		mta: New(c, h),
 	}
 	if mta == nil {
 		return nil
@@ -99,6 +114,10 @@ func (s *DefaultMta) ListenAndServe() error {
 	}
 
 	return s.listen(ln)
+}
+
+func (s *DefaultMta) Stop() {
+
 }
 
 func (s *DefaultMta) listen(ln net.Listener) error {
@@ -136,7 +155,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 	//log.Printf("Received connection")
 
 	// Hold state for this client connection
-	state := state{}
+	state := State{}
 	state.reset()
 
 	// Start with welcome message
@@ -184,7 +203,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				break
 			}
 
-			state.from = cmd.From
+			state.From = cmd.From
 
 			proto.Send(smtp.Answer{
 				Status:  smtp.Ok,
@@ -200,7 +219,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				break
 			}
 
-			state.to = append(state.to, cmd.To)
+			state.To = append(state.To, cmd.To)
 
 			proto.Send(smtp.Answer{
 				Status:  smtp.Ok,
@@ -233,7 +252,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 
 		tryAgain:
 			tmpData, err := ioutil.ReadAll(&cmd.R)
-			state.data = append(state.data, tmpData...)
+			state.Data = append(state.Data, tmpData...)
 			if err == smtp.ErrLtl {
 				proto.Send(smtp.Answer{
 					// SyntaxError or 552 error? or something else?
@@ -254,9 +273,9 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				panic(err)
 			}
 
-			fmt.Printf("Received mail. State: %v\n", state)
+			//fmt.Printf("Received mail. State: %v\n", state)
 
-			// TODO: Handle the email
+			s.MailHandler.HandleMail(&state)
 
 			proto.Send(smtp.Answer{
 				Status:  smtp.Ok,

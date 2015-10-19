@@ -8,6 +8,11 @@ import (
 	c "github.com/smartystreets/goconvey/convey"
 )
 
+// Dummy mail handler
+func dummyHandler(*State) {
+
+}
+
 type testProtocol struct {
 	t       *testing.T
 	cmds    []smtp.Cmd
@@ -68,7 +73,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 		Hostname: "home.sweet.home",
 	}
 
-	mta := New(cfg)
+	mta := New(cfg, HandlerFunc(dummyHandler))
 	if mta == nil {
 		t.Fatal("Could not create mta server")
 	}
@@ -184,7 +189,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 		Hostname: "home.sweet.home",
 	}
 
-	mta := New(cfg)
+	mta := New(cfg, HandlerFunc(dummyHandler))
 	if mta == nil {
 		t.Fatal("Could not create mta server")
 	}
@@ -412,7 +417,7 @@ func TestReset(t *testing.T) {
 		Hostname: "home.sweet.home",
 	}
 
-	mta := New(cfg)
+	mta := New(cfg, HandlerFunc(dummyHandler))
 	if mta == nil {
 		t.Fatal("Could not create mta server")
 	}
@@ -630,7 +635,7 @@ func TestAnswersUnknownCmd(t *testing.T) {
 		Hostname: "home.sweet.home",
 	}
 
-	mta := New(cfg)
+	mta := New(cfg, HandlerFunc(dummyHandler))
 	if mta == nil {
 		t.Fatal("Could not create mta server")
 	}
