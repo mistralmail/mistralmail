@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"bytes"
 
 	"github.com/gopistolet/gopistolet/smtp"
 )
@@ -246,9 +247,16 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				panic(err)
 			}
 
-			fmt.Printf("'%s'\n", string(data))
+			//fmt.Printf("'%s'\n", string(data))
 
 			// TODO: Handle the email
+			dataReader := bytes.NewReader(data)
+			msg, err := smtp.ReadMessage(dataReader)
+			if err != nil {
+				// What to do?
+			} else {
+				fmt.Println(msg)
+			}
 
 		case smtp.RsetCmd:
 			state.reset()
