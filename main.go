@@ -1,13 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"errors"
-	"bytes"
 
 	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/mta"
@@ -18,19 +18,19 @@ var mailDir *maildir.Maildir
 
 func handleMailDir(state *mta.State) {
 	err := errors.New("")
-	
+
 	// Open maildir if it's not yet open
 	if mailDir == nil {
-		
+
 		// Open a maildir. If it does not exist, create it.
 		mailDir, err = maildir.New("./maildir", true)
 		if err != nil {
 			log.Println(err)
 		}
 	}
-	
+
 	dataReader := bytes.NewReader(state.Data)
-	
+
 	// Save mail in maildir
 	filename, err := mailDir.CreateMail(dataReader)
 	if err != nil {
