@@ -99,9 +99,13 @@ func New(c Config, h Handler) *Mta {
 }
 
 func (s *Mta) Stop() {
+	log.Printf("Received stop command. Sending shutdown event...")
 	close(s.shutDownC)
 	// Give existing connections some time to finish.
-	time.Sleep(20 * time.Second)
+	t := time.Duration(10)
+	log.Printf("Waiting for a maximum of %d seconds...", t)
+	time.Sleep(t * time.Second)
+	log.Printf("Sending force quit event...")
 	close(s.quitC)
 }
 
@@ -134,6 +138,7 @@ func (s *DefaultMta) ListenAndServe() error {
 		return err
 	}
 
+	// Close the listener so that listen well return from ln.Accept().
 	go func() {
 		_, ok := <-s.mta.shutDownC
 		if !ok {
@@ -142,6 +147,7 @@ func (s *DefaultMta) ListenAndServe() error {
 	}()
 
 	err = s.listen(ln)
+	log.Printf("Waiting for connections to close...")
 	s.mta.wg.Wait()
 	return err
 }
@@ -154,6 +160,11 @@ func (s *DefaultMta) listen(ln net.Listener) error {
 			if ne, ok := err.(net.Error); ok && ne.Temporary() {
 				log.Printf("Accept error: %v", err)
 				continue
+			}
+			// Assume this means listener was closed.
+			if noe, ok := err.(*net.OpError); ok && !noe.Temporary() {
+				log.Printf("Listener is closed, stopping listen loop...")
+				return nil
 			}
 			return err
 		}
