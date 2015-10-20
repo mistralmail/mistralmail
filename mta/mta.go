@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"sync"
+	"time"
 
 	"github.com/gopistolet/gopistolet/smtp"
 )
@@ -76,6 +78,12 @@ type Mta struct {
 	config Config
 	// The handler to be called when a mail is received.
 	MailHandler Handler
+	// When shutting down this channel is closed, no new connections should be handled then.
+	// But existing connections can continue untill quitC is closed.
+	shutDownC chan bool
+	// When this is closed existing connections should stop.
+	quitC chan bool
+	wg    sync.WaitGroup
 }
 
 // New Create a new MTA server that doesn't handle the protocol.
@@ -83,9 +91,22 @@ func New(c Config, h Handler) *Mta {
 	mta := &Mta{
 		config:      c,
 		MailHandler: h,
+		quitC:       make(chan bool),
+		shutDownC:   make(chan bool),
 	}
 
 	return mta
+}
+
+func (s *Mta) Stop() {
+	close(s.shutDownC)
+	fmt.Println("Closed shutdown")
+	// Give existing connections some time to finish.
+	time.Sleep(20 * time.Second)
+	fmt.Println("20sec")
+	close(s.quitC)
+	fmt.Println("Closed quit")
+
 }
 
 // Same as the Mta struct but has methods for handling socket connections.
@@ -106,6 +127,10 @@ func NewDefault(c Config, h Handler) *DefaultMta {
 	return mta
 }
 
+func (s *DefaultMta) Stop() {
+	s.mta.Stop()
+}
+
 func (s *DefaultMta) ListenAndServe() error {
 	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.mta.config.Hostname, s.mta.config.Port))
 	if err != nil {
@@ -113,11 +138,16 @@ func (s *DefaultMta) ListenAndServe() error {
 		return err
 	}
 
-	return s.listen(ln)
-}
+	go func() {
+		_, ok := <-s.mta.shutDownC
+		if !ok {
+			ln.Close()
+		}
+	}()
 
-func (s *DefaultMta) Stop() {
-
+	err = s.listen(ln)
+	s.mta.wg.Wait()
+	return err
 }
 
 func (s *DefaultMta) listen(ln net.Listener) error {
@@ -132,6 +162,7 @@ func (s *DefaultMta) listen(ln net.Listener) error {
 			return err
 		}
 
+		s.mta.wg.Add(1)
 		go s.serve(c)
 	}
 
@@ -140,6 +171,8 @@ func (s *DefaultMta) listen(ln net.Listener) error {
 }
 
 func (s *DefaultMta) serve(c net.Conn) {
+	defer s.mta.wg.Done()
+
 	proto := smtp.NewMtaProtocol(c)
 	if proto == nil {
 		log.Printf("Could not create Mta protocol")
@@ -164,9 +197,39 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 		Message: s.config.Hostname + " Service Ready",
 	})
 
-	c, ok := proto.GetCmd()
+	var c *smtp.Cmd
+	var ok bool
+
 	quit := false
+	cmdC := make(chan bool)
+
+	nextCmd := func() bool {
+		go func() {
+			c, ok = proto.GetCmd()
+			cmdC <- true
+		}()
+
+		select {
+		case _, ok := <-s.quitC:
+			if !ok {
+				proto.Send(smtp.Answer{
+					Status:  smtp.ShuttingDown,
+					Message: "Server is going down.",
+				})
+				return true
+			}
+		case _ = <-cmdC:
+			return false
+
+		}
+
+		return false
+	}
+
+	quit = nextCmd()
+
 	for ok == true && quit == false {
+
 		//log.Printf("Received cmd: %#v", *c)
 
 		switch cmd := (*c).(type) {
@@ -331,7 +394,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 			break
 		}
 
-		c, ok = proto.GetCmd()
+		quit = nextCmd()
 	}
 
 	proto.Close()

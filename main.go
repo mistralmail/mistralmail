@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/mta"
@@ -23,8 +26,8 @@ func mail(state *mta.State) {
 }
 
 func main() {
-	//sigc := make(chan os.Signal, 1)
-	//signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
 
 	fmt.Println("GoPistolet at your service!")
 
@@ -42,11 +45,12 @@ func main() {
 
 	mta := mta.NewDefault(c, mta.HandlerFunc(mail))
 	go func() {
-		//<-sigc
+		<-sigc
 		mta.Stop()
 	}()
 	err = mta.ListenAndServe()
 	if err != nil {
 		log.Println(err)
 	}
+	fmt.Println("AUTO EXIT")
 }

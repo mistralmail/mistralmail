@@ -18,6 +18,7 @@ const (
 	Closing           StatusCode = 221
 	Ok                StatusCode = 250
 	StartData         StatusCode = 354
+	ShuttingDown      StatusCode = 421
 	SyntaxError       StatusCode = 500
 	SyntaxErrorParam  StatusCode = 501
 	NotImplemented    StatusCode = 502
