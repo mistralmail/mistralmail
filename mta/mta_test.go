@@ -14,7 +14,9 @@ func dummyHandler(*State) {
 }
 
 type testProtocol struct {
-	t       *testing.T
+	t *testing.T
+	// Goconvey context so it works in a different goroutine
+	ctx     c.C
 	cmds    []smtp.Cmd
 	answers []interface{}
 }
@@ -25,7 +27,7 @@ func getMailWithoutError(a string) *smtp.MailAddress {
 }
 
 func (p *testProtocol) Send(cmd smtp.Cmd) {
-	c.So(len(p.answers), c.ShouldBeGreaterThan, 0)
+	p.ctx.So(len(p.answers), c.ShouldBeGreaterThan, 0)
 
 	//c.Printf("RECEIVED: %#v\n", cmd)
 
@@ -33,20 +35,20 @@ func (p *testProtocol) Send(cmd smtp.Cmd) {
 	p.answers = p.answers[1:]
 
 	if cmdA, ok := cmd.(smtp.Answer); ok {
-		c.So(answer, c.ShouldHaveSameTypeAs, cmdA)
+		p.ctx.So(answer, c.ShouldHaveSameTypeAs, cmdA)
 		cmdE, _ := answer.(smtp.Answer)
-		c.So(cmdE.Status, c.ShouldEqual, cmdA.Status)
+		p.ctx.So(cmdE.Status, c.ShouldEqual, cmdA.Status)
 	} else if cmdA, ok := cmd.(smtp.MultiAnswer); ok {
-		c.So(answer, c.ShouldHaveSameTypeAs, cmdA)
+		p.ctx.So(answer, c.ShouldHaveSameTypeAs, cmdA)
 		cmdE, _ := answer.(smtp.MultiAnswer)
-		c.So(cmdE.Status, c.ShouldEqual, cmdA.Status)
+		p.ctx.So(cmdE.Status, c.ShouldEqual, cmdA.Status)
 	} else {
 		p.t.Fatalf("Answer should be Answer or MultiAnswer")
 	}
 }
 
 func (p *testProtocol) GetCmd() (*smtp.Cmd, bool) {
-	c.So(len(p.cmds), c.ShouldBeGreaterThan, 0)
+	p.ctx.So(len(p.cmds), c.ShouldBeGreaterThan, 0)
 
 	cmd := p.cmds[0]
 	p.cmds = p.cmds[1:]
@@ -61,10 +63,10 @@ func (p *testProtocol) GetCmd() (*smtp.Cmd, bool) {
 
 func (p *testProtocol) Close() {
 	// Did not expect connection to be closed, got more commands
-	c.So(len(p.cmds), c.ShouldBeLessThanOrEqualTo, 0)
+	p.ctx.So(len(p.cmds), c.ShouldBeLessThanOrEqualTo, 0)
 
 	// Did not expect connection to be closed, need more answers
-	c.So(len(p.answers), c.ShouldBeLessThanOrEqualTo, 0)
+	p.ctx.So(len(p.answers), c.ShouldBeLessThanOrEqualTo, 0)
 }
 
 // Tests answers for HELO,EHLO and QUIT
@@ -78,11 +80,12 @@ func TestAnswersHeloQuit(t *testing.T) {
 		t.Fatal("Could not create mta server")
 	}
 
-	c.Convey("Testing answers for HELO and QUIT.", t, func() {
+	c.Convey("Testing answers for HELO and QUIT.", t, func(ctx c.C) {
 
 		// Test connection with HELO and QUIT
 		proto := &testProtocol{
-			t: t,
+			t:   t,
+			ctx: ctx,
 			cmds: []smtp.Cmd{
 				smtp.HeloCmd{
 					Domain: "some.sender",
@@ -107,9 +110,10 @@ func TestAnswersHeloQuit(t *testing.T) {
 		mta.HandleClient(proto)
 	})
 
-	c.Convey("Testing answers for HELO and close connection.", t, func() {
+	c.Convey("Testing answers for HELO and close connection.", t, func(ctx c.C) {
 		proto := &testProtocol{
-			t: t,
+			t:   t,
+			ctx: ctx,
 			cmds: []smtp.Cmd{
 				smtp.HeloCmd{
 					Domain: "some.sender",
@@ -131,11 +135,12 @@ func TestAnswersHeloQuit(t *testing.T) {
 
 	})
 
-	c.Convey("Testing answers for EHLO and QUIT.", t, func() {
+	c.Convey("Testing answers for EHLO and QUIT.", t, func(ctx c.C) {
 
 		// Test connection with EHLO and QUIT
 		proto := &testProtocol{
-			t: t,
+			t:   t,
+			ctx: ctx,
 			cmds: []smtp.Cmd{
 				smtp.EhloCmd{
 					Domain: "some.sender",
@@ -159,9 +164,10 @@ func TestAnswersHeloQuit(t *testing.T) {
 		mta.HandleClient(proto)
 	})
 
-	c.Convey("Testing answers for EHLO and close connection.", t, func() {
+	c.Convey("Testing answers for EHLO and close connection.", t, func(ctx c.C) {
 		proto := &testProtocol{
-			t: t,
+			t:   t,
+			ctx: ctx,
 			cmds: []smtp.Cmd{
 				smtp.EhloCmd{
 					Domain: "some.sender",
@@ -194,10 +200,11 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 		t.Fatal("Could not create mta server")
 	}
 
-	c.Convey("Testing correct sequence of MAIL,RCPT,DATA commands.", t, func() {
+	c.Convey("Testing correct sequence of MAIL,RCPT,DATA commands.", t, func(ctx c.C) {
 
 		proto := &testProtocol{
-			t: t,
+			t:   t,
+			ctx: ctx,
 			cmds: []smtp.Cmd{
 				smtp.HeloCmd{
 					Domain: "some.sender",
@@ -254,10 +261,11 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 		mta.HandleClient(proto)
 	})
 
-	c.Convey("Testing wrong sequence of MAIL,RCPT,DATA commands.", t, func() {
+	c.Convey("Testing wrong sequence of MAIL,RCPT,DATA commands.", t, func(ctx c.C) {
 		c.Convey("RCPT before MAIL", func() {
 			proto := &testProtocol{
-				t: t,
+				t:   t,
+				ctx: ctx,
 				cmds: []smtp.Cmd{
 					smtp.HeloCmd{
 						Domain: "some.sender",
@@ -291,7 +299,8 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 
 		c.Convey("DATA before MAIL", func() {
 			proto := &testProtocol{
-				t: t,
+				t:   t,
+				ctx: ctx,
 				cmds: []smtp.Cmd{
 					smtp.HeloCmd{
 						Domain: "some.sender",
@@ -323,7 +332,8 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 
 		c.Convey("DATA before RCPT", func() {
 			proto := &testProtocol{
-				t: t,
+				t:   t,
+				ctx: ctx,
 				cmds: []smtp.Cmd{
 					smtp.HeloCmd{
 						Domain: "some.sender",
@@ -362,7 +372,8 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 
 		c.Convey("Multiple MAIL commands.", func() {
 			proto := &testProtocol{
-				t: t,
+				t:   t,
+				ctx: ctx,
 				cmds: []smtp.Cmd{
 					smtp.HeloCmd{
 						Domain: "some.sender",
@@ -422,11 +433,12 @@ func TestReset(t *testing.T) {
 		t.Fatal("Could not create mta server")
 	}
 
-	c.Convey("Testing reset", t, func() {
+	c.Convey("Testing reset", t, func(ctx c.C) {
 
 		c.Convey("Test reset after sending mail.", func() {
 			proto := &testProtocol{
-				t: t,
+				t:   t,
+				ctx: ctx,
 				cmds: []smtp.Cmd{
 					smtp.HeloCmd{
 						Domain: "some.sender",
@@ -485,7 +497,8 @@ func TestReset(t *testing.T) {
 
 		c.Convey("Manually reset", func() {
 			proto := &testProtocol{
-				t: t,
+				t:   t,
+				ctx: ctx,
 				cmds: []smtp.Cmd{
 					smtp.HeloCmd{
 						Domain: "some.sender",
@@ -557,7 +570,8 @@ func TestReset(t *testing.T) {
 		// EHLO should reset state.
 		c.Convey("Reset with EHLO", func() {
 			proto := &testProtocol{
-				t: t,
+				t:   t,
+				ctx: ctx,
 				cmds: []smtp.Cmd{
 					smtp.EhloCmd{
 						Domain: "some.sender",
@@ -640,9 +654,10 @@ func TestAnswersUnknownCmd(t *testing.T) {
 		t.Fatal("Could not create mta server")
 	}
 
-	c.Convey("Testing answers for unknown cmds.", t, func() {
+	c.Convey("Testing answers for unknown cmds.", t, func(ctx c.C) {
 		proto := &testProtocol{
-			t: t,
+			t:   t,
+			ctx: ctx,
 			cmds: []smtp.Cmd{
 				smtp.HeloCmd{
 					Domain: "some.sender",
