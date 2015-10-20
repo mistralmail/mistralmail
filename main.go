@@ -6,10 +6,39 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"errors"
+	"bytes"
 
 	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/mta"
+	"github.com/sloonz/go-maildir"
 )
+
+var mailDir *maildir.Maildir
+
+func handleMailDir(state *mta.State) {
+	err := errors.New("")
+	
+	// Open maildir if it's not yet open
+	if mailDir == nil {
+		
+		// Open a maildir. If it does not exist, create it.
+		mailDir, err = maildir.New("./maildir", true)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	
+	dataReader := bytes.NewReader(state.Data)
+	
+	// Save mail in maildir
+	filename, err := mailDir.CreateMail(dataReader)
+	if err != nil {
+		log.Println(err)
+	} else {
+		log.Println("Mail written to file: " + filename)
+	}
+}
 
 func mail(state *mta.State) {
 	log.Printf("From: %s\n", state.From.Address)
@@ -43,7 +72,7 @@ func main() {
 		log.Println(err)
 	}
 
-	mta := mta.NewDefault(c, mta.HandlerFunc(mail))
+	mta := mta.NewDefault(c, mta.HandlerFunc(handleMailDir))
 	go func() {
 		<-sigc
 		mta.Stop()

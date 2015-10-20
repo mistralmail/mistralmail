@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"bytes"
 	"sync"
 	"time"
 
@@ -343,19 +342,6 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 			} else if err != nil {
 				panic(err)
 			}
-
-			//fmt.Printf("'%s'\n", string(data))
-
-			// TODO: Handle the email
-			// this code will be removed...
-			dataReader := bytes.NewReader(state.Data)
-			msg, err := smtp.ReadMessage(dataReader)
-			if err != nil {
-				// What to do?
-			} else {
-				fmt.Println(msg)
-			}
-			//fmt.Printf("Received mail. State: %v\n", state)
 
 			s.MailHandler.HandleMail(&state)
 
