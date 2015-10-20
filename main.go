@@ -52,5 +52,4 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
-	fmt.Println("AUTO EXIT")
 }

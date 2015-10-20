@@ -100,13 +100,9 @@ func New(c Config, h Handler) *Mta {
 
 func (s *Mta) Stop() {
 	close(s.shutDownC)
-	fmt.Println("Closed shutdown")
 	// Give existing connections some time to finish.
 	time.Sleep(20 * time.Second)
-	fmt.Println("20sec")
 	close(s.quitC)
-	fmt.Println("Closed quit")
-
 }
 
 // Same as the Mta struct but has methods for handling socket connections.
