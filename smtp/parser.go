@@ -1,6 +1,7 @@
 package smtp
 
 import "bufio"
+
 import "strings"
 import "errors"
 
@@ -20,10 +21,16 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 		servers (see Section 4).
 	*/
 
-	line, _ := br.ReadString('\n')
+	line, err := br.ReadString('\n')
+	if err != nil {
+		return nil, err
+	}
 
 	for line == "" {
-		line, _ = br.ReadString('\n')
+		line, err = br.ReadString('\n')
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var address *MailAddress
@@ -33,17 +40,26 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 	}
 	//conn.write(500, err.Error())
 	//conn.c.Close()
-	_ = args
 
 	switch verb {
 
 	case "HELO":
 		{
+			// TODO: < 1 or == 1?
+			if len(args) < 1 {
+				command = InvalidCmd{Cmd: "HELO", Info: "HELO requires valid address"}
+				break
+			}
 			command = HeloCmd{Domain: args[0]}
 		}
 
 	case "EHLO":
 		{
+			// TODO: < 1 or == 1?
+			if len(args) < 1 {
+				command = InvalidCmd{Cmd: "EHLO", Info: "EHLO requires valid address"}
+				break
+			}
 			command = EhloCmd{Domain: args[0]}
 		}
 
@@ -140,7 +156,7 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 
 	default:
 		{
-			command = UnknownCmd{Cmd: line}
+			command = UnknownCmd{Cmd: verb, Line: strings.TrimSuffix(line, "\n")}
 		}
 
 	}
@@ -184,6 +200,10 @@ func parseFROM(args []string) (*MailAddress, error) {
 	if index == -1 {
 		return nil, errors.New("No FROM given (didn't find ':')")
 	}
+	if strings.ToLower(joined_args[0:index]) != "from" {
+		return nil, errors.New("No FROM given")
+	}
+
 	address_str := joined_args[index+1 : len(joined_args)]
 
 	address, err := ParseAddress(address_str)
@@ -205,6 +225,10 @@ func parseTO(args []string) (*MailAddress, error) {
 	if index == -1 {
 		return nil, errors.New("No TO given (didn't find ':')")
 	}
+	if strings.ToLower(joined_args[0:index]) != "to" {
+		return nil, errors.New("No TO given")
+	}
+
 	address_str := joined_args[index+1 : len(joined_args)]
 
 	address, err := ParseAddress(address_str)

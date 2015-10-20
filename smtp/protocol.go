@@ -18,6 +18,7 @@ const (
 	Closing           StatusCode = 221
 	Ok                StatusCode = 250
 	StartData         StatusCode = 354
+	ShuttingDown      StatusCode = 421
 	SyntaxError       StatusCode = 500
 	SyntaxErrorParam  StatusCode = 501
 	NotImplemented    StatusCode = 502
@@ -167,7 +168,29 @@ func (c Answer) String() string {
 	return fmt.Sprintf("%d %s", c.Status, c.Message)
 }
 
-// Known command with invalid arguments or syntax
+// MultiAnswer A multiline answer.
+type MultiAnswer struct {
+	Status   StatusCode
+	Messages []string
+}
+
+func (c MultiAnswer) String() string {
+	if len(c.Messages) == 0 {
+		return fmt.Sprintf("%d", c.Status)
+	}
+
+	result := ""
+	for i := 0; i < len(c.Messages)-1; i++ {
+		result += fmt.Sprintf("%d-%s", c.Status, c.Messages[i])
+		result += "\n"
+	}
+
+	result += fmt.Sprintf("%d %s", c.Status, c.Messages[len(c.Messages)-1])
+
+	return result
+}
+
+// InvalidCmd is a known command with invalid arguments or syntax
 type InvalidCmd struct {
 	// The command
 	Cmd  string
@@ -175,13 +198,14 @@ type InvalidCmd struct {
 }
 
 func (c InvalidCmd) String() string {
-	return fmt.Sprintf("%s", c.Cmd, c.Info)
+	return fmt.Sprintf("%s %s", c.Cmd, c.Info)
 }
 
-// InvalidCmd A command that is none of the other commands. i.e. not implemented
+// UnknownCmd is a command that is none of the other commands. i.e. not implemented
 type UnknownCmd struct {
 	// The command
-	Cmd string
+	Cmd  string
+	Line string
 }
 
 func (c UnknownCmd) String() string {
@@ -323,6 +347,7 @@ func (p *MtaProtocol) GetCmd() (c *Cmd, ok bool) {
 	cmd, err := p.parser.ParseCommand(p.br)
 	if err != nil {
 		log.Printf("Could not parse command: %v", err)
+		return nil, false
 	}
 
 	return &cmd, true

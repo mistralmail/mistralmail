@@ -15,7 +15,7 @@ Building
 Configuration
 -------------
 
-*TODO*
+Copy `config.sample.json` to `config.json` and edit the file if you want to change the defaults.
 
 
 Authors

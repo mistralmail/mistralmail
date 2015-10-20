@@ -6,22 +6,26 @@ import "errors"
 
 type MailAddress mail.Address
 
+// GetLocal gets the local part of a mail address. E.g the part before the @.
 func (address *MailAddress) GetLocal() string {
 	index := strings.LastIndex(address.Address, "@")
-	local := address.Address[0:index]
+	local := address.Address[:index]
 	return local
 }
 
+// GetDomain gets the domain part of a mail address. E.g the part after the @.
 func (address *MailAddress) GetDomain() string {
 	index := strings.LastIndex(address.Address, "@")
-	domain := address.Address[index+1 : len(address.Address)]
+	domain := address.Address[index+1:]
 	return domain
 }
 
+// GetAddress gets the full mail address.
 func (address *MailAddress) GetAddress() string {
 	return address.Address
 }
 
+// ParseAddress parses a string into a MailAddress.
 func ParseAddress(rawAddress string) (MailAddress, error) {
 
 	/*
@@ -40,11 +44,11 @@ func ParseAddress(rawAddress string) (MailAddress, error) {
 	if index == -1 {
 		return MailAddress{}, errors.New("Expected @ in mail address")
 	}
-	rawLocal := rawAddress[0:index]
+	rawLocal := rawAddress[:index]
 	if len(rawLocal) > 64 {
 		return MailAddress{}, errors.New("Length of local part exceeds 64")
 	}
-	rawDomain := rawAddress[index+1 : len(rawAddress)]
+	rawDomain := rawAddress[index+1:]
 	if len(rawDomain) > 255 {
 		return MailAddress{}, errors.New("Length of domain name part exceeds 255")
 	}
@@ -56,5 +60,4 @@ func ParseAddress(rawAddress string) (MailAddress, error) {
 	}
 
 	return MailAddress(*address), nil
-
 }
