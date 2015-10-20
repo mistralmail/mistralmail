@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/mta"
 )
 
@@ -30,9 +31,16 @@ func main() {
 
 	fmt.Println("GoPistolet at your service!")
 
+	// Default config
 	c := mta.Config{
 		Hostname: "localhost",
-		Port:     2525,
+		Port:     25,
+	}
+
+	// Load config from JSON file
+	err := helpers.DecodeFile("config.json", &c)
+	if err != nil {
+		log.Println(err)
 	}
 
 	mta := mta.NewDefault(c, mta.HandlerFunc(mail))
@@ -40,7 +48,7 @@ func main() {
 		<-sigc
 		mta.Stop()
 	}()
-	err := mta.ListenAndServe()
+	err = mta.ListenAndServe()
 	if err != nil {
 		log.Println(err)
 	}
