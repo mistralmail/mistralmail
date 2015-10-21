@@ -77,7 +77,7 @@ func (s *State) canReceiveData() (bool, string) {
 type Mta struct {
 	config Config
 	// The handler to be called when a mail is received.
-	MailHandler Handler
+	MailHandlers []Handler
 	// When shutting down this channel is closed, no new connections should be handled then.
 	// But existing connections can continue untill quitC is closed.
 	shutDownC chan bool
@@ -87,12 +87,12 @@ type Mta struct {
 }
 
 // New Create a new MTA server that doesn't handle the protocol.
-func New(c Config, h Handler) *Mta {
+func New(c Config, h []Handler) *Mta {
 	mta := &Mta{
-		config:      c,
-		MailHandler: h,
-		quitC:       make(chan bool),
-		shutDownC:   make(chan bool),
+		config:       c,
+		MailHandlers: h,
+		quitC:        make(chan bool),
+		shutDownC:    make(chan bool),
 	}
 
 	return mta
@@ -116,7 +116,7 @@ type DefaultMta struct {
 
 // NewDefault Create a new MTA server with a
 // socket protocol implementation.
-func NewDefault(c Config, h Handler) *DefaultMta {
+func NewDefault(c Config, h []Handler) *DefaultMta {
 	mta := &DefaultMta{
 		mta: New(c, h),
 	}
@@ -343,7 +343,9 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				panic(err)
 			}
 
-			s.MailHandler.HandleMail(&state)
+			for _, h := range s.MailHandlers {
+				h.HandleMail(&state)
+			}
 
 			proto.Send(smtp.Answer{
 				Status:  smtp.Ok,
