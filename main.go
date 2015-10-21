@@ -54,6 +54,16 @@ func mail(state *mta.State) {
 	log.Printf("CONTENT_END\n\n\n\n")
 }
 
+type Chain struct {
+	handlers []mta.Handler
+}
+
+func (c *Chain) HandleMail(state *mta.State) {
+	for _, handler := range c.handlers {
+		handler.HandleMail(state)
+	}
+}
+
 func main() {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
@@ -72,7 +82,11 @@ func main() {
 		log.Println(err)
 	}
 
-	mta := mta.NewDefault(c, mta.HandlerFunc(handleMailDir))
+	mta := mta.NewDefault(c,
+		&Chain{handlers: []mta.Handler{
+			mta.HandlerFunc(mail),
+			mta.HandlerFunc(handleMailDir),
+		}})
 	go func() {
 		<-sigc
 		mta.Stop()
