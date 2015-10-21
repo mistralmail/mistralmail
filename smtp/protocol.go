@@ -182,7 +182,7 @@ func (c MultiAnswer) String() string {
 	result := ""
 	for i := 0; i < len(c.Messages)-1; i++ {
 		result += fmt.Sprintf("%d-%s", c.Status, c.Messages[i])
-		result += "\n"
+		result += "\r\n"
 	}
 
 	result += fmt.Sprintf("%d %s", c.Status, c.Messages[len(c.Messages)-1])
