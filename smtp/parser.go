@@ -179,6 +179,10 @@ func parseLine(line string) (verb string, args []string, err error) {
 		return "", []string{}, errors.New("Line too long")
 	}
 
+	// Strip \n and \r
+	line = strings.TrimSuffix(line, "\n")
+	line = strings.TrimSuffix(line, "\r")
+
 	i := strings.Index(line, " ")
 	if i == -1 {
 		verb = strings.ToUpper(strings.TrimSpace(line))
