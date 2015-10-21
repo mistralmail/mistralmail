@@ -72,7 +72,10 @@ func main() {
 		log.Println(err)
 	}
 
-	mta := mta.NewDefault(c, mta.HandlerFunc(handleMailDir))
+	mta := mta.NewDefault(c, []mta.Handler{
+		mta.HandlerFunc(mail),
+		mta.HandlerFunc(handleMailDir),
+	})
 	go func() {
 		<-sigc
 		mta.Stop()
