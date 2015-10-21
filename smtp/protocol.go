@@ -340,7 +340,7 @@ func NewMtaProtocol(c net.Conn) *MtaProtocol {
 }
 
 func (p *MtaProtocol) Send(c Cmd) {
-	fmt.Fprintln(p.c, c)
+	fmt.Fprintf(p.c, "%s\r\n", c)
 }
 
 func (p *MtaProtocol) GetCmd() (c *Cmd, ok bool) {
