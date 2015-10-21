@@ -343,8 +343,6 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				panic(err)
 			}
 
-			//fmt.Printf("Received mail. State: %v\n", state)
-
 			s.MailHandler.HandleMail(&state)
 
 			proto.Send(smtp.Answer{

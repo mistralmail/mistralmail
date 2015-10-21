@@ -9,3 +9,4 @@ go:
 install:
   - go get github.com/smartystreets/goconvey/convey
   - go get github.com/gopistolet/gospf
+  - go get github.com/sloonz/go-maildir
