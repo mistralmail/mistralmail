@@ -2,7 +2,6 @@ package smtp
 
 import (
 	"bufio"
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -33,124 +32,164 @@ var ErrLtl = errors.New("Line too long")
 // ErrIncomplete Incomplete data error
 var ErrIncomplete = errors.New("Incomplete data")
 
-type LimitedReader struct {
-	R     io.Reader // underlying reader
-	N     int       // max bytes remaining
-	Delim byte
+const (
+	MAX_DATA_LINE = 1000
+	MAX_CMD_LINE  = 512
+)
+
+// ReadUntill reads untill delim is found or max bytes are read.
+// If delim was found it returns nil as error. If delim wasn't found after max bytes,
+// it returns ErrLtl.
+func ReadUntill(delim byte, max int, r io.Reader) ([]byte, error) {
+	buffer := make([]byte, max)
+
+	n := 0
+	for n < max {
+		read, err := r.Read(buffer[n : n+1])
+		if read == 0 || err != nil {
+			return buffer[0:n], err
+		}
+
+		if read > 1 {
+			panic("Should read 1 byte at a time.")
+		}
+
+		if buffer[n] == delim {
+			return buffer[0 : n+1], nil
+		}
+
+		n++
+
+	}
+
+	return buffer[0:n], ErrLtl
 }
 
-func (l *LimitedReader) Read(p []byte) (int, error) {
-	if l.N <= 0 {
-		return 0, io.EOF
-	}
-
-	if len(p) > l.N {
-		p = p[0:l.N]
-	}
-
-	bytesRead := 0
-	buf := make([]byte, 1)
-	for l.N > 0 && bytesRead < len(p) {
-		n, err := l.R.Read(buf)
-
-		if n > 0 {
-			p[bytesRead] = buf[0]
-			l.N -= n
-			bytesRead += n
-			if buf[0] == l.Delim {
-				break
+// SkipTillNewline removes all data untill a newline is found.
+func SkipTillNewline(r io.Reader) error {
+	var err error
+	for {
+		_, err = ReadUntill('\n', 1000, r)
+		if err != nil {
+			if err == ErrLtl {
+				continue
 			}
 
+			break
 		}
 
-		if err != nil {
-			return bytesRead, err
-		}
+		break
 	}
 
-	return bytesRead, nil
+	return err
 }
-
-const (
-	MAX_LINE = 1000
-)
 
 // DataReader implements the reader that will read the data from a MAIL cmd
 type DataReader struct {
-	r      io.Reader
-	buffer []byte
+	br          *bufio.Reader
+	state       int
+	bytesInLine int
 }
 
-func NewDataReader(r io.Reader) *DataReader {
+func NewDataReader(br *bufio.Reader) *DataReader {
 	dr := &DataReader{
-		r:      r,
-		buffer: make([]byte, 0, MAX_LINE),
+		br: br,
 	}
 
 	return dr
 }
 
-func (r *DataReader) Read(p []byte) (int, error) {
-	var n int = 0
+// Implementation from textproto.DotReader.Read
+func (r *DataReader) Read(b []byte) (n int, err error) {
+	// Run data through a simple state machine to
+	// elide leading dots, rewrite trailing \r\n into \n,
+	// and detect ending .\r\n line.
+	const (
+		stateBeginLine = iota // beginning of line; initial state; must be zero
+		stateDot              // read . at beginning of line
+		stateDotCR            // read .\r at beginning of line
+		stateCR               // read \r (possibly at end of line)
+		stateData             // reading data in middle of line
+		stateEOF              // reached .\r\n end marker line
+	)
 
-	if len(r.buffer) > 0 {
-		n = copy(p, r.buffer)
-		r.buffer = r.buffer[n:]
-		return n, nil
-	}
+	br := r.br
+	for n < len(b) && r.state != stateEOF {
+		var c byte
+		c, err = br.ReadByte()
+		if err != nil {
+			err = ErrIncomplete
 
-	limited := &LimitedReader{
-		R:     r.r,
-		N:     MAX_LINE + 1,
-		Delim: '\n',
-	}
-
-	br := bufio.NewReader(limited)
-
-	line, err := br.ReadBytes('\n')
-	lineLen := len(line)
-	if lineLen > 0 && line[len(line)-1] != '\n' {
-		buf := make([]byte, 1)
-
-		for n, err := r.r.Read(buf); ; {
-			if n > 0 {
-				if buf[0] == '\n' {
-					break
-				}
+		}
+		r.bytesInLine++
+		if r.bytesInLine > MAX_DATA_LINE {
+			err = ErrLtl
+			break
+		}
+		switch r.state {
+		case stateBeginLine:
+			if c == '.' {
+				r.state = stateDot
+				continue
 			}
+			if c == '\r' {
+				r.state = stateCR
+				continue
+			}
+			r.state = stateData
 
-			if err != nil {
+		case stateDot:
+			if c == '\r' {
+				r.state = stateDotCR
+				continue
+			}
+			if c == '\n' {
+				r.state = stateEOF
+				continue
+			}
+			r.state = stateData
+
+		case stateDotCR:
+			if c == '\n' {
+				r.state = stateEOF
+				continue
+			}
+			// Not part of .\r\n.
+			// Consume leading dot and emit saved \r.
+			br.UnreadByte()
+			c = '\r'
+			r.state = stateData
+
+		case stateCR:
+			if c == '\n' {
+				r.state = stateBeginLine
+				r.bytesInLine = 0
 				break
 			}
+			// Not part of \r\n.  Emit saved \r
+			br.UnreadByte()
+			c = '\r'
+			r.state = stateData
 
-			n, err = r.r.Read(buf)
+		case stateData:
+			if c == '\r' {
+				r.state = stateCR
+				continue
+			}
+			if c == '\n' {
+				r.state = stateBeginLine
+				r.bytesInLine = 0
+			}
 		}
-	}
-	fmt.Printf("Read %d bytes\n", lineLen)
-
-	if bytes.Compare(line, []byte(".\r\n")) == 0 ||
-		bytes.Compare(line, []byte(".\r")) == 0 ||
-		bytes.Compare(line, []byte(".\n")) == 0 {
-
-		return 0, io.EOF
-	} else if lineLen > 2 && line[0] == '.' {
-		line = line[1:]
-		lineLen--
+		b[n] = c
+		n++
 	}
 
-	if lineLen > MAX_LINE {
-		return 0, ErrLtl
+	if err == nil && r.state == stateEOF {
+		err = io.EOF
 	}
 
-	n = copy(p, line)
-	r.buffer = r.buffer[0 : lineLen-n]
-	copy(r.buffer, line[n:])
-
-	if err == io.EOF {
-		return 0, ErrIncomplete
-	}
-
-	return n, nil
+	return
 }
 
 // Cmd All SMTP answers/commands should implement this interface.
@@ -314,9 +353,8 @@ type Protocol interface {
 	// Send a SMTP command.
 	Send(Cmd)
 	// Receive a command(will block while waiting for it).
-	// Returns false if there are no more commands left. Otherwise a command will be returned.
-	// We need the bool because if we just return nil, the nil will also implement the empty interface...
-	GetCmd() (*Cmd, bool)
+	// Returns an error if something wen't wrong. E.g line was too long.
+	GetCmd() (*Cmd, error)
 	// Close the connection.
 	Close()
 }
@@ -343,14 +381,14 @@ func (p *MtaProtocol) Send(c Cmd) {
 	fmt.Fprintf(p.c, "%s\r\n", c)
 }
 
-func (p *MtaProtocol) GetCmd() (c *Cmd, ok bool) {
+func (p *MtaProtocol) GetCmd() (c *Cmd, err error) {
 	cmd, err := p.parser.ParseCommand(p.br)
 	if err != nil {
 		log.Printf("Could not parse command: %v", err)
-		return nil, false
+		return nil, err
 	}
 
-	return &cmd, true
+	return &cmd, nil
 }
 
 func (p *MtaProtocol) Close() {

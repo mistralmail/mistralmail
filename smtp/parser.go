@@ -1,6 +1,9 @@
 package smtp
 
-import "bufio"
+import (
+	"bufio"
+	"log"
+)
 
 import "strings"
 import "errors"
@@ -21,20 +24,9 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 		servers (see Section 4).
 	*/
 
-	line, err := br.ReadString('\n')
-	if err != nil {
-		return nil, err
-	}
-
-	for line == "" {
-		line, err = br.ReadString('\n')
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	var address *MailAddress
-	verb, args, err := parseLine(line)
+	verb, args, err := parseLine(br)
+	log.Printf("Verb: %s. args: %v", verb, args)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +148,8 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 
 	default:
 		{
-			command = UnknownCmd{Cmd: verb, Line: strings.TrimSuffix(line, "\n")}
+			// TODO: CLEAN THIS UP
+			command = UnknownCmd{Cmd: verb, Line: strings.TrimSuffix(verb, "\n")}
 		}
 
 	}
@@ -165,7 +158,7 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 }
 
 // parseLine returns the verb of the line and a list of all comma separated arguments
-func parseLine(line string) (verb string, args []string, err error) {
+func parseLine(br *bufio.Reader) (verb string, args []string, err error) {
 
 	/*
 		RFC 5321
@@ -175,9 +168,16 @@ func parseLine(line string) (verb string, args []string, err error) {
 		and the <CRLF> is 512 octets.  SMTP extensions may be used to
 		increase this limit.
 	*/
-	if len(line) > 512 {
-		return "", []string{}, errors.New("Line too long")
+	buffer, err := ReadUntill('\n', MAX_CMD_LINE, br)
+	if err != nil {
+		if err == ErrLtl {
+			SkipTillNewline(br)
+			return string(buffer), []string{}, err
+		}
+
+		return string(buffer), []string{}, err
 	}
+	line := string(buffer)
 
 	// Strip \n and \r
 	line = strings.TrimSuffix(line, "\n")
