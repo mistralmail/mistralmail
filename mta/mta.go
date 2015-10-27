@@ -1,6 +1,7 @@
 package mta
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,15 +13,17 @@ import (
 )
 
 type Config struct {
-	Hostname string
-	Port     uint32
+	Hostname  string
+	Port      uint32
+	TlsConfig *tls.Config
 }
 
 // State contains all the state for a single client
 type State struct {
-	From *smtp.MailAddress
-	To   []*smtp.MailAddress
-	Data []byte
+	From   *smtp.MailAddress
+	To     []*smtp.MailAddress
+	Data   []byte
+	Secure bool
 }
 
 // Handler is the interface that will be used when a mail was received.
@@ -107,6 +110,10 @@ func (s *Mta) Stop() {
 	time.Sleep(t * time.Second)
 	log.Printf("Sending force quit event...")
 	close(s.quitC)
+}
+
+func (s *Mta) hasTls() bool {
+	return s.config.TlsConfig != nil
 }
 
 // Same as the Mta struct but has methods for handling socket connections.
@@ -266,12 +273,16 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 		case smtp.EhloCmd:
 			state.reset()
 
+			messages := []string{s.config.Hostname}
+			if s.hasTls() && !state.Secure {
+				messages = append(messages, "STARTTLS")
+			}
+
+			messages = append(messages, "OK")
+
 			proto.Send(smtp.MultiAnswer{
-				Status: smtp.Ok,
-				Messages: []string{
-					s.config.Hostname,
-					"OK",
-				},
+				Status:   smtp.Ok,
+				Messages: messages,
 			})
 
 		case smtp.QuitCmd:
@@ -376,6 +387,38 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				Status:  smtp.Ok,
 				Message: "OK",
 			})
+
+		case smtp.StartTlsCmd:
+			if !s.hasTls() {
+				proto.Send(smtp.Answer{
+					Status:  smtp.NotImplemented,
+					Message: "STARTTLS is not implemented",
+				})
+				break
+			}
+
+			if state.Secure {
+				proto.Send(smtp.Answer{
+					Status:  smtp.NotImplemented,
+					Message: "Already in TLS mode",
+				})
+				break
+			}
+
+			proto.Send(smtp.Answer{
+				Status:  smtp.Ready,
+				Message: "Ready for TLS handshake",
+			})
+
+			err := proto.StartTls(s.config.TlsConfig)
+			if err != nil {
+				log.Println("Could not enable TLS mode")
+				break
+			}
+
+			log.Println("Yay, we are using TLS now")
+			state.reset()
+			state.Secure = true
 
 		case smtp.NoopCmd:
 			proto.Send(smtp.Answer{

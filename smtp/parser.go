@@ -146,6 +146,11 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 			command = QuitCmd{}
 		}
 
+	case "STARTTLS":
+		{
+			command = StartTlsCmd{}
+		}
+
 	default:
 		{
 			// TODO: CLEAN THIS UP

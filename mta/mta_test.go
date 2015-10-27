@@ -3,6 +3,8 @@ package mta
 import (
 	"bufio"
 	"bytes"
+	"crypto/tls"
+	"errors"
 	"io"
 	"testing"
 
@@ -69,6 +71,10 @@ func (p *testProtocol) Close() {
 
 	// Did not expect connection to be closed, need more answers
 	p.ctx.So(len(p.answers), c.ShouldBeLessThanOrEqualTo, 0)
+}
+
+func (p *testProtocol) StartTls(c *tls.Config) error {
+	return errors.New("NOT IMPLEMENTED")
 }
 
 // Tests answers for HELO,EHLO and QUIT

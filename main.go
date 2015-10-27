@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
@@ -70,14 +71,22 @@ func main() {
 
 	fmt.Println("GoPistolet at your service!")
 
+	cert, err := tls.LoadX509KeyPair("ssl/server.crt", "ssl/server.key")
+	if err != nil {
+		panic(err)
+	}
+
 	// Default config
 	c := mta.Config{
 		Hostname: "localhost",
 		Port:     25,
+		TlsConfig: &tls.Config{
+			Certificates: []tls.Certificate{cert},
+		},
 	}
 
 	// Load config from JSON file
-	err := helpers.DecodeFile("config.json", &c)
+	err = helpers.DecodeFile("config.json", &c)
 	if err != nil {
 		log.Println(err)
 	}
