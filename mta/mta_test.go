@@ -1,7 +1,9 @@
 package mta
 
 import (
+	"bufio"
 	"bytes"
+	"io"
 	"testing"
 
 	"github.com/gopistolet/gopistolet/smtp"
@@ -47,18 +49,18 @@ func (p *testProtocol) Send(cmd smtp.Cmd) {
 	}
 }
 
-func (p *testProtocol) GetCmd() (*smtp.Cmd, bool) {
+func (p *testProtocol) GetCmd() (*smtp.Cmd, error) {
 	p.ctx.So(len(p.cmds), c.ShouldBeGreaterThan, 0)
 
 	cmd := p.cmds[0]
 	p.cmds = p.cmds[1:]
 
 	if cmd == nil {
-		return nil, false
+		return nil, io.EOF
 	}
 
 	//c.Printf("SENDING: %#v\n", cmd)
-	return &cmd, true
+	return &cmd, nil
 }
 
 func (p *testProtocol) Close() {
@@ -219,7 +221,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					To: getMailWithoutError("guy2@somewhere.test"),
 				},
 				smtp.DataCmd{
-					R: *smtp.NewDataReader(bytes.NewReader([]byte("Some test email\n.\n"))),
+					R: *smtp.NewDataReader(bufio.NewReader(bytes.NewReader([]byte("Some test email\n.\n")))),
 				},
 				smtp.QuitCmd{},
 			},
@@ -450,7 +452,7 @@ func TestReset(t *testing.T) {
 						To: getMailWithoutError("guy1@somewhere.test"),
 					},
 					smtp.DataCmd{
-						R: *smtp.NewDataReader(bytes.NewReader([]byte("Some email content\n.\n"))),
+						R: *smtp.NewDataReader(bufio.NewReader(bytes.NewReader([]byte("Some email content\n.\n")))),
 					},
 					smtp.RcptCmd{
 						To: getMailWithoutError("someguy@somewhere.test"),
@@ -517,7 +519,7 @@ func TestReset(t *testing.T) {
 						To: getMailWithoutError("guy1@somewhere.test"),
 					},
 					smtp.DataCmd{
-						R: *smtp.NewDataReader(bytes.NewReader([]byte("Some email\n.\n"))),
+						R: *smtp.NewDataReader(bufio.NewReader(bytes.NewReader([]byte("Some email\n.\n")))),
 					},
 					smtp.QuitCmd{},
 				},
@@ -592,7 +594,7 @@ func TestReset(t *testing.T) {
 						To: getMailWithoutError("guy1@somewhere.test"),
 					},
 					smtp.DataCmd{
-						R: *smtp.NewDataReader(bytes.NewReader([]byte("Some email\n.\n"))),
+						R: *smtp.NewDataReader(bufio.NewReader(bytes.NewReader([]byte("Some email\n.\n")))),
 					},
 					smtp.QuitCmd{},
 				},

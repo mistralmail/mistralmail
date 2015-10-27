@@ -48,7 +48,6 @@ func TestParser(t *testing.T) {
 		}
 
 		for _, expectedCommand := range expectedCommands {
-			Print(expectedCommand)
 			command, err := p.ParseCommand(br)
 			So(err, ShouldEqual, nil)
 			So(command, ShouldResemble, expectedCommand)
@@ -59,8 +58,6 @@ func TestParser(t *testing.T) {
 	Convey("Testing parser DATA cmd", t, func() {
 		commands := ""
 		commands += "DATA\r\n"
-		commands += "Some usefull data.\r\n"
-		commands += ".\r\n"
 		commands += "quit\r\n"
 
 		br := bufio.NewReader(strings.NewReader(commands))
@@ -69,13 +66,6 @@ func TestParser(t *testing.T) {
 		command, err := p.ParseCommand(br)
 		So(err, ShouldEqual, nil)
 		So(command, ShouldHaveSameTypeAs, DataCmd{})
-		dataCommand, ok := command.(DataCmd)
-		So(ok, ShouldEqual, true)
-		br2 := bufio.NewReader(dataCommand.R.r)
-		line, _ := br2.ReadString('\n')
-		So(line, ShouldEqual, "Some usefull data.\r\n")
-		line, _ = br2.ReadString('\n')
-		So(line, ShouldEqual, ".\r\n")
 
 		command, err = p.ParseCommand(br)
 		So(err, ShouldEqual, nil)
@@ -140,16 +130,16 @@ func TestParser(t *testing.T) {
 			args []string
 		}{
 			{
-				line: "HELO",
+				line: "HELO\r\n",
 				verb: "HELO",
 			},
 			{
-				line: "HELO relay.example.org",
+				line: "HELO relay.example.org\r\n",
 				verb: "HELO",
 				args: []string{"relay.example.org"},
 			},
 			{
-				line: "MAIL FROM:<bob@example.org>",
+				line: "MAIL FROM:<bob@example.org>\r\n",
 				verb: "MAIL",
 				args: []string{"FROM:<bob@example.org>"},
 			},
@@ -166,7 +156,8 @@ func TestParser(t *testing.T) {
 		}
 
 		for _, test := range tests {
-			verb, args, err := parseLine(test.line)
+			br := bufio.NewReader(strings.NewReader(test.line))
+			verb, args, err := parseLine(br)
 			So(err, ShouldEqual, nil)
 			So(verb, ShouldEqual, test.verb)
 			So(args, ShouldResemble, test.args)
@@ -181,13 +172,14 @@ func TestParser(t *testing.T) {
 			addressString string
 		}{
 			{
-				line:          "RCPT TO:<alice@example.com>",
+				line:          "RCPT TO:<alice@example.com>\r\n",
 				addressString: "alice@example.com",
 			},
 		}
 
 		for _, test := range tests {
-			_, args, err := parseLine(test.line)
+			br := bufio.NewReader(strings.NewReader(test.line))
+			_, args, err := parseLine(br)
 			So(err, ShouldEqual, nil)
 
 			addr, err := parseTO(args)
