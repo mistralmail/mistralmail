@@ -74,6 +74,8 @@ func main() {
 	c := mta.Config{
 		Hostname: "localhost",
 		Port:     25,
+		TlsCert:  "ssl/server.crt",
+		TlsKey:   "ssl/server.key",
 	}
 
 	// Load config from JSON file

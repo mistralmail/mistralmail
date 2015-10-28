@@ -2,6 +2,7 @@ package smtp
 
 import (
 	"bufio"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -306,6 +307,13 @@ func (c RsetCmd) String() string {
 	return ""
 }
 
+type StartTlsCmd struct {
+}
+
+func (c StartTlsCmd) String() string {
+	return ""
+}
+
 type NoopCmd struct{}
 
 func (c NoopCmd) String() string {
@@ -357,6 +365,8 @@ type Protocol interface {
 	GetCmd() (*Cmd, error)
 	// Close the connection.
 	Close()
+	// StartTls starts the tls handshake
+	StartTls(*tls.Config) error
 }
 
 type MtaProtocol struct {
@@ -396,4 +406,16 @@ func (p *MtaProtocol) Close() {
 	if err != nil {
 		log.Printf("Error while closing protocol: %v", err)
 	}
+}
+
+func (p *MtaProtocol) StartTls(c *tls.Config) error {
+	tlsCon := tls.Server(p.c, c)
+	err := tlsCon.Handshake()
+	if err != nil {
+		return err
+	}
+
+	p.c = tlsCon
+	p.br.Reset(p.c)
+	return nil
 }
