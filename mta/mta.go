@@ -13,9 +13,10 @@ import (
 )
 
 type Config struct {
-	Hostname  string
-	Port      uint32
-	TlsConfig *tls.Config
+	Hostname string
+	Port     uint32
+	TlsCert  string
+	TlsKey   string
 }
 
 // State contains all the state for a single client
@@ -81,6 +82,8 @@ type Mta struct {
 	config Config
 	// The handler to be called when a mail is received.
 	MailHandler Handler
+	// The config for tls connection. Nil if not supported.
+	TlsConfig *tls.Config
 	// When shutting down this channel is closed, no new connections should be handled then.
 	// But existing connections can continue untill quitC is closed.
 	shutDownC chan bool
@@ -98,6 +101,17 @@ func New(c Config, h Handler) *Mta {
 		shutDownC:   make(chan bool),
 	}
 
+	if c.TlsCert != "" && c.TlsKey != "" {
+		cert, err := tls.LoadX509KeyPair(c.TlsCert, c.TlsKey)
+		if err != nil {
+			log.Printf("Could not load keypair: %v", err)
+		} else {
+			mta.TlsConfig = &tls.Config{
+				Certificates: []tls.Certificate{cert},
+			}
+		}
+	}
+
 	return mta
 }
 
@@ -113,7 +127,7 @@ func (s *Mta) Stop() {
 }
 
 func (s *Mta) hasTls() bool {
-	return s.config.TlsConfig != nil
+	return s.TlsConfig != nil
 }
 
 // Same as the Mta struct but has methods for handling socket connections.
@@ -410,7 +424,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				Message: "Ready for TLS handshake",
 			})
 
-			err := proto.StartTls(s.config.TlsConfig)
+			err := proto.StartTls(s.TlsConfig)
 			if err != nil {
 				log.Println("Could not enable TLS mode")
 				break

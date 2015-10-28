@@ -20,9 +20,10 @@ func dummyHandler(*State) {
 type testProtocol struct {
 	t *testing.T
 	// Goconvey context so it works in a different goroutine
-	ctx     c.C
-	cmds    []smtp.Cmd
-	answers []interface{}
+	ctx       c.C
+	cmds      []smtp.Cmd
+	answers   []interface{}
+	expectTLS bool
 }
 
 func getMailWithoutError(a string) *smtp.MailAddress {
@@ -39,13 +40,13 @@ func (p *testProtocol) Send(cmd smtp.Cmd) {
 	p.answers = p.answers[1:]
 
 	if cmdA, ok := cmd.(smtp.Answer); ok {
-		p.ctx.So(answer, c.ShouldHaveSameTypeAs, cmdA)
+		p.ctx.So(cmdA, c.ShouldHaveSameTypeAs, answer)
 		cmdE, _ := answer.(smtp.Answer)
-		p.ctx.So(cmdE.Status, c.ShouldEqual, cmdA.Status)
+		p.ctx.So(cmdA.Status, c.ShouldEqual, cmdE.Status)
 	} else if cmdA, ok := cmd.(smtp.MultiAnswer); ok {
-		p.ctx.So(answer, c.ShouldHaveSameTypeAs, cmdA)
+		p.ctx.So(cmdA, c.ShouldHaveSameTypeAs, answer)
 		cmdE, _ := answer.(smtp.MultiAnswer)
-		p.ctx.So(cmdE.Status, c.ShouldEqual, cmdA.Status)
+		p.ctx.So(cmdA.Status, c.ShouldEqual, cmdE.Status)
 	} else {
 		p.t.Fatalf("Answer should be Answer or MultiAnswer")
 	}
@@ -74,7 +75,12 @@ func (p *testProtocol) Close() {
 }
 
 func (p *testProtocol) StartTls(c *tls.Config) error {
-	return errors.New("NOT IMPLEMENTED")
+	if !p.expectTLS {
+		p.t.Fatalf("Did not expect StartTls")
+		return errors.New("NOT IMPLEMENTED")
+	}
+
+	return nil
 }
 
 // Tests answers for HELO,EHLO and QUIT
@@ -694,6 +700,131 @@ func TestAnswersUnknownCmd(t *testing.T) {
 				},
 			},
 		}
+		mta.HandleClient(proto)
+	})
+}
+
+// Tests STARTTLS
+func TestStartTls(t *testing.T) {
+	cfg := Config{
+		Hostname: "home.sweet.home",
+	}
+
+	mta := New(cfg, HandlerFunc(dummyHandler))
+	mta.TlsConfig = &tls.Config{}
+	if mta == nil {
+		t.Fatal("Could not create mta server")
+	}
+
+	c.Convey("Testing STARTTLS", t, func(ctx c.C) {
+		proto := &testProtocol{
+			t:   t,
+			ctx: ctx,
+			cmds: []smtp.Cmd{
+				smtp.EhloCmd{
+					Domain: "some.sender",
+				},
+				smtp.StartTlsCmd{},
+				smtp.QuitCmd{},
+			},
+			answers: []interface{}{
+				smtp.Answer{
+					Status:  smtp.Ready,
+					Message: cfg.Hostname + " Service Ready",
+				},
+				smtp.MultiAnswer{
+					Status: smtp.Ok,
+				},
+				smtp.Answer{
+					Status: smtp.Ready,
+				},
+				smtp.Answer{
+					Status:  smtp.Closing,
+					Message: "Bye!",
+				},
+			},
+		}
+		proto.expectTLS = true
+		mta.HandleClient(proto)
+	})
+
+	c.Convey("Testing if STARTTLS resets state", t, func(ctx c.C) {
+		proto := &testProtocol{
+			t:   t,
+			ctx: ctx,
+			cmds: []smtp.Cmd{
+				smtp.EhloCmd{
+					Domain: "some.sender",
+				},
+				smtp.MailCmd{
+					From: getMailWithoutError("someone@somewhere.test"),
+				},
+				smtp.StartTlsCmd{},
+				smtp.MailCmd{
+					From: getMailWithoutError("someone@somewhere.test"),
+				},
+				smtp.QuitCmd{},
+			},
+			answers: []interface{}{
+				smtp.Answer{
+					Status:  smtp.Ready,
+					Message: cfg.Hostname + " Service Ready",
+				},
+				smtp.MultiAnswer{
+					Status: smtp.Ok,
+				},
+				smtp.Answer{
+					Status: smtp.Ok,
+				},
+				smtp.Answer{
+					Status: smtp.Ready,
+				},
+				smtp.Answer{
+					Status: smtp.Ok,
+				},
+				smtp.Answer{
+					Status:  smtp.Closing,
+					Message: "Bye!",
+				},
+			},
+		}
+		proto.expectTLS = true
+		mta.HandleClient(proto)
+	})
+
+	c.Convey("Testing if we can STARTTLS twice", t, func(ctx c.C) {
+		proto := &testProtocol{
+			t:   t,
+			ctx: ctx,
+			cmds: []smtp.Cmd{
+				smtp.EhloCmd{
+					Domain: "some.sender",
+				},
+				smtp.StartTlsCmd{},
+				smtp.StartTlsCmd{},
+				smtp.QuitCmd{},
+			},
+			answers: []interface{}{
+				smtp.Answer{
+					Status:  smtp.Ready,
+					Message: cfg.Hostname + " Service Ready",
+				},
+				smtp.MultiAnswer{
+					Status: smtp.Ok,
+				},
+				smtp.Answer{
+					Status: smtp.Ready,
+				},
+				smtp.Answer{
+					Status: smtp.NotImplemented,
+				},
+				smtp.Answer{
+					Status:  smtp.Closing,
+					Message: "Bye!",
+				},
+			},
+		}
+		proto.expectTLS = true
 		mta.HandleClient(proto)
 	})
 }
