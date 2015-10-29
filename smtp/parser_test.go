@@ -127,31 +127,32 @@ func TestParser(t *testing.T) {
 		tests := []struct {
 			line string
 			verb string
-			args []string
+			args map[string]Argument
 		}{
 			{
 				line: "HELO\r\n",
 				verb: "HELO",
+				args: map[string]Argument{},
 			},
 			{
 				line: "HELO relay.example.org\r\n",
 				verb: "HELO",
-				args: []string{"relay.example.org"},
+				args: map[string]Argument{"relay.example.org": Argument{Key: "relay.example.org"}},
 			},
 			{
 				line: "MAIL FROM:<bob@example.org>\r\n",
 				verb: "MAIL",
-				args: []string{"FROM:<bob@example.org>"},
+				args: map[string]Argument{"FROM": Argument{Key: "FROM", Value: "<bob@example.org>", Operator: ":"}},
 			},
 			{
 				line: "HELO some_ctrl_char\r\n",
 				verb: "HELO",
-				args: []string{"some_ctrl_char"},
+				args: map[string]Argument{"some_ctrl_char": Argument{Key: "some_ctrl_char"}},
 			},
 			{
 				line: "HELO some_ctrl_char\n",
 				verb: "HELO",
-				args: []string{"some_ctrl_char"},
+				args: map[string]Argument{"some_ctrl_char": Argument{Key: "some_ctrl_char"}},
 			},
 		}
 
@@ -182,11 +183,36 @@ func TestParser(t *testing.T) {
 			_, args, err := parseLine(br)
 			So(err, ShouldEqual, nil)
 
-			addr, err := parseTO(args)
+			toArg := args["TO"]
+			addr, err := parseTO(toArg.Key + toArg.Operator + toArg.Value)
 			So(err, ShouldEqual, nil)
 			So(addr.GetAddress(), ShouldEqual, test.addressString)
 		}
 
 	})
 
+	Convey("Testing parseFROM()", t, func() {
+
+		tests := []struct {
+			line          string
+			addressString string
+		}{
+			{
+				line:          "MAIL from:<alice@example.com>\r\n",
+				addressString: "alice@example.com",
+			},
+		}
+
+		for _, test := range tests {
+			br := bufio.NewReader(strings.NewReader(test.line))
+			_, args, err := parseLine(br)
+			So(err, ShouldEqual, nil)
+
+			fromArg := args["FROM"]
+			addr, err := parseFROM(fromArg.Key + fromArg.Operator + fromArg.Value)
+			So(err, ShouldEqual, nil)
+			So(addr.GetAddress(), ShouldEqual, test.addressString)
+		}
+
+	})
 }
