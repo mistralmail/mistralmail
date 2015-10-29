@@ -276,7 +276,8 @@ func (c QuitCmd) String() string {
 }
 
 type MailCmd struct {
-	From *MailAddress
+	From         *MailAddress
+	EightBitMIME bool
 }
 
 func (c MailCmd) String() string {

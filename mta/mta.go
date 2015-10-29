@@ -21,10 +21,11 @@ type Config struct {
 
 // State contains all the state for a single client
 type State struct {
-	From   *smtp.MailAddress
-	To     []*smtp.MailAddress
-	Data   []byte
-	Secure bool
+	From         *smtp.MailAddress
+	To           []*smtp.MailAddress
+	Data         []byte
+	EightBitMIME bool
+	Secure       bool
 }
 
 // Handler is the interface that will be used when a mail was received.
@@ -44,6 +45,7 @@ func (s *State) reset() {
 	s.From = nil
 	s.To = []*smtp.MailAddress{}
 	s.Data = []byte{}
+	s.EightBitMIME = false
 }
 
 // Checks the state if the client can send a MAIL command.
@@ -287,7 +289,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 		case smtp.EhloCmd:
 			state.reset()
 
-			messages := []string{s.config.Hostname}
+			messages := []string{s.config.Hostname, "8BITMIME"}
 			if s.hasTls() && !state.Secure {
 				messages = append(messages, "STARTTLS")
 			}
@@ -316,10 +318,16 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 			}
 
 			state.From = cmd.From
+			state.EightBitMIME = cmd.EightBitMIME
+			message := "Sender"
+			if state.EightBitMIME {
+				message += " and 8BITMIME"
+			}
+			message += " ok"
 
 			proto.Send(smtp.Answer{
 				Status:  smtp.Ok,
-				Message: "OK",
+				Message: message,
 			})
 
 		case smtp.RcptCmd:
@@ -357,9 +365,14 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				break
 			}
 
+			message := "Start"
+			if state.EightBitMIME {
+				message += " 8BITMIME"
+			}
+			message += " mail input; end with <CRLF>.<CRLF>"
 			proto.Send(smtp.Answer{
 				Status:  smtp.StartData,
-				Message: "Start mail input; end with <CRLF>.<CRLF>",
+				Message: message,
 			})
 
 		tryAgain:

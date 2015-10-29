@@ -68,9 +68,24 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 			if err != nil {
 				command = InvalidCmd{Cmd: verb, Info: err.Error()}
 				err = nil
-			} else {
-				command = MailCmd{From: address}
+				break
 			}
+
+			eightBitMIME := false
+			bodyArg, ok := args["BODY"]
+			if ok {
+				bodyArg.Value = strings.ToUpper(bodyArg.Value)
+				if bodyArg.Operator != "=" || (bodyArg.Value != "8BITMIME" && bodyArg.Value != "7BIT") {
+					command = InvalidCmd{Cmd: verb, Info: "Syntax is BODY=8BITMIME|7BIT"}
+					break
+				}
+
+				if bodyArg.Value == "8BITMIME" {
+					eightBitMIME = true
+				}
+			}
+
+			command = MailCmd{From: address, EightBitMIME: eightBitMIME}
 		}
 
 	case "RCPT":
