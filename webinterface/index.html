@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GoPistolet</title>
+    
+    <link href="/assets/pure.css" rel="stylesheet" type="text/css">
+    <link href="/assets/style.css" rel="stylesheet" type="text/css">
+    
+    <script type="text/javascript" src="/assets/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="/assets/ohsnap.js"></script>
+    
+</head>
+<body>
+    <script type="text/javascript">
+        
+        wsuri = "ws://"+window.location.host+"/ws"
+        
+        $( document ).ready(function() {
+            
+            sock = new WebSocket(wsuri);
+            
+            sock.onopen = function() {
+                console.log("connected to " + wsuri);
+            }
+            
+            sock.onclose = function(e) {
+                console.log("connection closed (" + e.code + ")");
+            }
+            
+            sock.onmessage = handleReceivedMessage;
+            
+            
+            $('#config-form').submit( function(event) {
+                event.preventDefault();
+                var data = {};
+                
+                $('input[type=text]', this).each(function() {
+                    if(!isNaN(this.value)) {
+                       data[this.name] = parseInt(this.value);
+                    } else {
+                        data[this.name] = this.value;
+                    }
+                    
+                });
+                
+                console.log(data)
+                
+                sock.send(JSON.stringify(data, null, 4));
+            });
+            
+        });
+        
+        
+        function handleReceivedMessage(msg) {
+            console.log("message received: " + msg.data);
+            
+            var jsonVal = $.parseJSON(msg.data)
+            window[jsonVal.Method](jsonVal.Content);
+
+        }
+        
+        function send() {
+            var msg = document.getElementById('message').value;
+            sock.send(msg);
+        };
+        
+        function getConfig(data) {
+            var content = "";
+            $.each(data, function(key, value) {
+                content += `
+                <div class="pure-control-group">
+                    <label for="${key}">${key}</label>
+                    <input id="${key}" name="${key}" type="text" value="${value}">
+                </div>
+                `
+            });
+            $('form').prepend(content);
+        }
+        
+        function getNotify(msg) {
+            ohSnap(msg, 'blue');
+        }
+        
+        
+    </script>
+    
+    <div class="page">
+        
+        <h1>GoPistolet</h1>
+        
+        <form id="config-form" class="pure-form pure-form-aligned">
+            <!-- form fields will appear here -->
+            <div class="pure-controls">
+                <button type="submit" class="pure-button pure-button-primary">Save</button>
+            </div>
+        </form>
+
+        
+    </div>
+    
+    <!-- container for notifications -->
+    <div id="ohsnap"></div>
+    
+</body>
+</html>

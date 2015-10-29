@@ -1,0 +1,66 @@
+/*
+ * Simple style for web interface
+ */
+
+html {
+	background-color: #ecf0f1;
+    height: 100%;
+}
+
+body {
+   min-height: 100%;
+}
+
+h1 {
+	font-weight: 200;
+	text-align: center;
+}
+
+.page {
+	padding: 10px 0;
+	background-color: #fff;
+	max-width: 600px;
+	margin: auto;
+	box-sizing: border-box;
+	min-height: 100vh;
+}
+
+
+
+/* ALERTS for Ohsnap */
+
+.alert {
+  padding: 15px;
+  margin-top: 20px;
+  /* border: 1px solid #eed3d7; */
+  border-radius: 4px;
+  position: absolute;
+  box-shadow: 2px 2px 7px #ccc;
+  top: 0px;
+  right: 21px;
+  /* Each alert has its own width */
+  float: right;
+  clear: right;
+}
+
+.alert-red {
+  color: white;
+  background-color: #DA4453;
+}
+.alert-green {
+  color: white;
+  background-color: #37BC9B;
+}
+.alert-blue {
+  color: white;
+  /*background-color: #4A89DC;*/
+  background-color: rgb(0, 120, 231);
+}
+.alert-yellow {
+  color: white;
+  background-color: #F6BB42;
+}
+.alert-orange {
+  color:white;
+  background-color: #E9573F;
+}

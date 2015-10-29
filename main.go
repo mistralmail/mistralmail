@@ -11,6 +11,7 @@ import (
 
 	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/mta"
+	"github.com/gopistolet/gopistolet/webinterface"
 	"github.com/sloonz/go-maildir"
 )
 
@@ -91,10 +92,13 @@ func main() {
 		}})
 	go func() {
 		<-sigc
+		os.Exit(0)
 		mta.Stop()
 	}()
-	err = mta.ListenAndServe()
+	//err = mta.ListenAndServe()
 	if err != nil {
 		log.Println(err)
 	}
+
+	webinterface.Webinterface()
 }
