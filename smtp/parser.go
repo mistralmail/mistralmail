@@ -37,27 +37,34 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 
 	case "HELO":
 		{
-			// TODO: < 1 or == 1?
-			if len(args) < 1 {
-				command = InvalidCmd{Cmd: "HELO", Info: "HELO requires valid address"}
+			if len(args) != 1 {
+				command = InvalidCmd{Cmd: "HELO", Info: "HELO requires exactly one valid domain"}
 				break
 			}
-			command = HeloCmd{Domain: args[0]}
+			domain := ""
+			for _, arg := range args {
+				domain = arg.Key
+			}
+			command = HeloCmd{Domain: domain}
 		}
 
 	case "EHLO":
 		{
-			// TODO: < 1 or == 1?
-			if len(args) < 1 {
-				command = InvalidCmd{Cmd: "EHLO", Info: "EHLO requires valid address"}
+			if len(args) != 1 {
+				command = InvalidCmd{Cmd: "EHLO", Info: "EHLO requires exactly one valid address"}
 				break
 			}
-			command = EhloCmd{Domain: args[0]}
+			domain := ""
+			for _, arg := range args {
+				domain = arg.Key
+			}
+			command = EhloCmd{Domain: domain}
 		}
 
 	case "MAIL":
 		{
-			address, err = parseFROM(args)
+			fromArg := args["FROM"]
+			address, err = parseFROM(fromArg.Key + fromArg.Operator + fromArg.Value)
 			if err != nil {
 				command = InvalidCmd{Cmd: verb, Info: err.Error()}
 				err = nil
@@ -68,7 +75,8 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 
 	case "RCPT":
 		{
-			address, err = parseTO(args)
+			toArg := args["TO"]
+			address, err = parseTO(toArg.Key + toArg.Operator + toArg.Value)
 			if err != nil {
 				command = InvalidCmd{Cmd: verb, Info: err.Error()}
 				err = nil
@@ -128,12 +136,20 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 					conformance.
 				From what I have read, 502 is better than 252...
 			*/
-			command = VrfyCmd{Param: args[0]}
+			user := ""
+			for _, arg := range args {
+				user = arg.Key
+			}
+			command = VrfyCmd{Param: user}
 		}
 
 	case "EXPN":
 		{
-			command = ExpnCmd{ListName: args[0]}
+			listName := ""
+			for _, arg := range args {
+				listName = arg.Key
+			}
+			command = ExpnCmd{ListName: listName}
 		}
 
 	case "NOOP":
@@ -162,9 +178,14 @@ func (p *parser) ParseCommand(br *bufio.Reader) (command Cmd, err error) {
 	return
 }
 
-// parseLine returns the verb of the line and a list of all comma separated arguments
-func parseLine(br *bufio.Reader) (verb string, args []string, err error) {
+type Argument struct {
+	Key      string
+	Value    string
+	Operator string
+}
 
+// parseLine returns the verb of the line and a list of all comma separated arguments
+func parseLine(br *bufio.Reader) (string, map[string]Argument, error) {
 	/*
 		RFC 5321
 		4.5.3.1.4.  Command Line
@@ -177,12 +198,14 @@ func parseLine(br *bufio.Reader) (verb string, args []string, err error) {
 	if err != nil {
 		if err == ErrLtl {
 			SkipTillNewline(br)
-			return string(buffer), []string{}, err
+			return string(buffer), map[string]Argument{}, err
 		}
 
-		return string(buffer), []string{}, err
+		return string(buffer), map[string]Argument{}, err
 	}
 	line := string(buffer)
+	verb := ""
+	argMap := map[string]Argument{}
 
 	// Strip \n and \r
 	line = strings.TrimSuffix(line, "\n")
@@ -190,60 +213,67 @@ func parseLine(br *bufio.Reader) (verb string, args []string, err error) {
 
 	i := strings.Index(line, " ")
 	if i == -1 {
-		verb = strings.ToUpper(strings.TrimSpace(line))
-		return
+		verb = strings.ToUpper(line)
+		return verb, map[string]Argument{}, nil
 	}
 
 	verb = strings.ToUpper(line[:i])
-	args = strings.Split(strings.TrimSpace(line[i+1:len(line)]), " ")
-	return
-}
+	line = line[i+1:]
 
-func parseFROM(args []string) (*MailAddress, error) {
-	if len(args) < 1 {
-		return nil, errors.New("No FROM given")
+	tmpArgs := strings.Split(line, " ")
+	for _, arg := range tmpArgs {
+		argument := Argument{}
+		i = strings.IndexAny(arg, ":=")
+		if i == -1 {
+			argument.Key = strings.TrimSpace(arg)
+		} else {
+			argument.Key = strings.ToUpper(strings.TrimSpace(arg[:i]))
+			argument.Value = strings.TrimSpace(arg[i+1:])
+			argument.Operator = arg[i : i+1]
+		}
+
+		if len(argument.Key) == 0 {
+			continue
+		}
+
+		argMap[argument.Key] = argument
 	}
 
-	joined_args := strings.Join(args, " ")
-	index := strings.Index(joined_args, ":")
+	return verb, argMap, nil
+}
+
+func parseFROM(from string) (*MailAddress, error) {
+	index := strings.Index(from, ":")
 	if index == -1 {
 		return nil, errors.New("No FROM given (didn't find ':')")
 	}
-	if strings.ToLower(joined_args[0:index]) != "from" {
+	if strings.ToLower(from[0:index]) != "from" {
 		return nil, errors.New("No FROM given")
 	}
 
-	address_str := joined_args[index+1 : len(joined_args)]
+	address_str := from[index+1:]
 
 	address, err := ParseAddress(address_str)
 	if err != nil {
 		return nil, err
-	} else {
-		return &address, nil
 	}
-
+	return &address, nil
 }
 
-func parseTO(args []string) (*MailAddress, error) {
-	if len(args) < 1 {
-		return nil, errors.New("No TO given")
-	}
-
-	joined_args := strings.Join(args, " ")
-	index := strings.Index(joined_args, ":")
+func parseTO(to string) (*MailAddress, error) {
+	index := strings.Index(to, ":")
 	if index == -1 {
 		return nil, errors.New("No TO given (didn't find ':')")
 	}
-	if strings.ToLower(joined_args[0:index]) != "to" {
+	if strings.ToLower(to[0:index]) != "to" {
 		return nil, errors.New("No TO given")
 	}
 
-	address_str := joined_args[index+1 : len(joined_args)]
+	address_str := to[index+1:]
 
 	address, err := ParseAddress(address_str)
 	if err != nil {
 		return nil, err
-	} else {
-		return &address, nil
 	}
+	return &address, nil
 }
