@@ -16,6 +16,9 @@ func TestParser(t *testing.T) {
 		commands += "HELO relay.example.org\r\n"
 		commands += "EHLO other.example.org\r\n"
 		commands += "MAIL FROM:<bob@example.org>\r\n"
+		commands += "MAIL FROM:<bob@example.org> body=8BITMIME\r\n"
+		commands += "MAIL FROM:<bob@example.org> BODY=8bitmime\r\n"
+		commands += "MAIL FROM:<bob@example.org> BODY=7bit\r\n"
 		commands += "RCPT TO:<alice@example.com>\r\n"
 		commands += "RCPT TO:<theboss@example.com>\r\n"
 		commands += "SEND\r\n"
@@ -34,6 +37,9 @@ func TestParser(t *testing.T) {
 		expectedCommands := []Cmd{
 			HeloCmd{Domain: "relay.example.org"},
 			EhloCmd{Domain: "other.example.org"},
+			MailCmd{From: &MailAddress{Address: "bob@example.org"}},
+			MailCmd{From: &MailAddress{Address: "bob@example.org"}, EightBitMIME: true},
+			MailCmd{From: &MailAddress{Address: "bob@example.org"}, EightBitMIME: true},
 			MailCmd{From: &MailAddress{Address: "bob@example.org"}},
 			RcptCmd{To: &MailAddress{Address: "alice@example.com"}},
 			RcptCmd{To: &MailAddress{Address: "theboss@example.com"}},
@@ -90,6 +96,7 @@ func TestParser(t *testing.T) {
 		commands += "MAIL :valid@mail.be\r\n"
 		commands += "MAIL FROA:valid@mail.be\r\n"
 		commands += "MAIL To some@invalid\r\n"
+		commands += "MAIL FROM:some@valid.be BODY:8bitmime\r\n"
 		commands += "UNKN some unknown command\r\n"
 
 		br := bufio.NewReader(strings.NewReader(commands))
@@ -102,6 +109,7 @@ func TestParser(t *testing.T) {
 			InvalidCmd{},
 			UnknownCmd{},
 			UnknownCmd{},
+			InvalidCmd{},
 			InvalidCmd{},
 			InvalidCmd{},
 			InvalidCmd{},
@@ -153,6 +161,16 @@ func TestParser(t *testing.T) {
 				line: "HELO some_ctrl_char\n",
 				verb: "HELO",
 				args: map[string]Argument{"some_ctrl_char": Argument{Key: "some_ctrl_char"}},
+			},
+			{
+				line: "SOME_verb     a	b    c test1=value1 test2:value2\n",
+				verb: "SOME_VERB",
+				args: map[string]Argument{
+					"a\tb":  Argument{Key: "a\tb"},
+					"c":     Argument{Key: "c"},
+					"TEST1": Argument{Key: "TEST1", Value: "value1", Operator: "="},
+					"TEST2": Argument{Key: "TEST2", Value: "value2", Operator: ":"},
+				},
 			},
 		}
 
