@@ -3,14 +3,13 @@ package main
 import (
 	"bytes"
 	"errors"
-	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/mta"
+	"github.com/gopistolet/gopistolet/log"
 	"github.com/sloonz/go-maildir"
 )
 
@@ -36,7 +35,7 @@ func handleMailDir(state *mta.State) {
 	if err != nil {
 		log.Println(err)
 	} else {
-		log.Println("Mail written to file: " + filename)
+		log.Println("Maildir: mail written to file: " + filename)
 	}
 }
 
@@ -49,9 +48,9 @@ func mail(state *mta.State) {
 			log.Printf(",")
 		}
 	}
-	log.Printf("\nCONTENT_START:\n")
+	log.Printf("CONTENT_START:\n")
 	log.Printf("%s\n", string(state.Data))
-	log.Printf("CONTENT_END\n\n\n\n")
+	log.Printf("CONTENT_END\n")
 }
 
 type Chain struct {
@@ -68,7 +67,7 @@ func main() {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
 
-	fmt.Println("GoPistolet at your service!")
+	log.Println("GoPistolet at your service!")
 
 	// Default config
 	c := mta.Config{

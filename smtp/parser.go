@@ -2,7 +2,7 @@ package smtp
 
 import (
 	"bufio"
-	"log"
+	"github.com/gopistolet/gopistolet/log"
 )
 
 import "strings"

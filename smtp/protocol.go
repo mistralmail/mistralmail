@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"github.com/gopistolet/gopistolet/log"
 	"net"
 )
 

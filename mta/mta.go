@@ -4,12 +4,12 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"sync"
 	"time"
 
 	"github.com/gopistolet/gopistolet/smtp"
+	"github.com/gopistolet/gopistolet/log"
 )
 
 type Config struct {
