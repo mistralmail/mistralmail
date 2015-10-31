@@ -14,13 +14,20 @@ func TestParser(t *testing.T) {
 	Convey("Testing parser", t, func() {
 		commands := ""
 		commands += "HELO relay.example.org\r\n"
+		commands += "HeLo relay.example.org\r\n"
+		commands += "helo relay.example.org\r\n"
+		commands += "helO relay.example.org\r\n"
 		commands += "EHLO other.example.org\r\n"
 		commands += "MAIL FROM:<bob@example.org>\r\n"
+		commands += "MAIL FROM:<BOB@example.org>\r\n"
+		commands += "mail FROM:<bob@example.org>\r\n"
 		commands += "MAIL FROM:<bob@example.org> body=8BITMIME\r\n"
 		commands += "MAIL FROM:<bob@example.org> BODY=8bitmime\r\n"
 		commands += "MAIL FROM:<bob@example.org> BODY=7bit\r\n"
 		commands += "RCPT TO:<alice@example.com>\r\n"
 		commands += "RCPT TO:<theboss@example.com>\r\n"
+		commands += "RCPT to:<theboss@example.com>\r\n"
+		commands += "rcpt to:<Theboss@example.com>\r\n"
 		commands += "SEND\r\n"
 		commands += "SOML\r\n"
 		commands += "SAML\r\n"
@@ -36,13 +43,20 @@ func TestParser(t *testing.T) {
 
 		expectedCommands := []Cmd{
 			HeloCmd{Domain: "relay.example.org"},
+			HeloCmd{Domain: "relay.example.org"},
+			HeloCmd{Domain: "relay.example.org"},
+			HeloCmd{Domain: "relay.example.org"},
 			EhloCmd{Domain: "other.example.org"},
+			MailCmd{From: &MailAddress{Address: "bob@example.org"}},
+			MailCmd{From: &MailAddress{Address: "BOB@example.org"}},
 			MailCmd{From: &MailAddress{Address: "bob@example.org"}},
 			MailCmd{From: &MailAddress{Address: "bob@example.org"}, EightBitMIME: true},
 			MailCmd{From: &MailAddress{Address: "bob@example.org"}, EightBitMIME: true},
 			MailCmd{From: &MailAddress{Address: "bob@example.org"}},
 			RcptCmd{To: &MailAddress{Address: "alice@example.com"}},
 			RcptCmd{To: &MailAddress{Address: "theboss@example.com"}},
+			RcptCmd{To: &MailAddress{Address: "theboss@example.com"}},
+			RcptCmd{To: &MailAddress{Address: "Theboss@example.com"}},
 			SendCmd{},
 			SomlCmd{},
 			SamlCmd{},
