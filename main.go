@@ -8,8 +8,8 @@ import (
 	"syscall"
 
 	"github.com/gopistolet/gopistolet/helpers"
-	"github.com/gopistolet/gopistolet/mta"
 	"github.com/gopistolet/gopistolet/log"
+	"github.com/gopistolet/gopistolet/mta"
 	"github.com/sloonz/go-maildir"
 )
 

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gopistolet/gopistolet/smtp"
 	"github.com/gopistolet/gopistolet/log"
+	"github.com/gopistolet/gopistolet/smtp"
 )
 
 type Config struct {
