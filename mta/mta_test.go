@@ -12,6 +12,9 @@ import (
 	c "github.com/smartystreets/goconvey/convey"
 )
 
+// Some default ip
+var someIp string = "1.2.3.4"
+
 // Dummy mail handler
 func dummyHandler(*State) {
 
@@ -121,7 +124,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto)
+		mta.HandleClient(proto, someIp)
 	})
 
 	c.Convey("Testing answers for HELO and close connection.", t, func(ctx c.C) {
@@ -145,7 +148,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto)
+		mta.HandleClient(proto, someIp)
 
 	})
 
@@ -175,7 +178,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto)
+		mta.HandleClient(proto, someIp)
 	})
 
 	c.Convey("Testing answers for EHLO and close connection.", t, func(ctx c.C) {
@@ -198,7 +201,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto)
+		mta.HandleClient(proto, someIp)
 
 	})
 }
@@ -272,7 +275,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto)
+		mta.HandleClient(proto, someIp)
 	})
 
 	c.Convey("Testing wrong sequence of MAIL,RCPT,DATA commands.", t, func(ctx c.C) {
@@ -308,7 +311,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto)
+			mta.HandleClient(proto, someIp)
 		})
 
 		c.Convey("DATA before MAIL", func() {
@@ -341,7 +344,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto)
+			mta.HandleClient(proto, someIp)
 		})
 
 		c.Convey("DATA before RCPT", func() {
@@ -381,7 +384,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto)
+			mta.HandleClient(proto, someIp)
 		})
 
 		c.Convey("Multiple MAIL commands.", func() {
@@ -430,7 +433,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto)
+			mta.HandleClient(proto, someIp)
 		})
 
 	})
@@ -506,7 +509,7 @@ func TestReset(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto)
+			mta.HandleClient(proto, someIp)
 		})
 
 		c.Convey("Manually reset", func() {
@@ -578,7 +581,7 @@ func TestReset(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto)
+			mta.HandleClient(proto, someIp)
 		})
 
 		// EHLO should reset state.
@@ -651,7 +654,7 @@ func TestReset(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto)
+			mta.HandleClient(proto, someIp)
 		})
 
 	})
@@ -700,7 +703,7 @@ func TestAnswersUnknownCmd(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto)
+		mta.HandleClient(proto, someIp)
 	})
 }
 
@@ -745,7 +748,7 @@ func TestStartTls(t *testing.T) {
 			},
 		}
 		proto.expectTLS = true
-		mta.HandleClient(proto)
+		mta.HandleClient(proto, someIp)
 	})
 
 	c.Convey("Testing if STARTTLS resets state", t, func(ctx c.C) {
@@ -789,7 +792,7 @@ func TestStartTls(t *testing.T) {
 			},
 		}
 		proto.expectTLS = true
-		mta.HandleClient(proto)
+		mta.HandleClient(proto, someIp)
 	})
 
 	c.Convey("Testing if we can STARTTLS twice", t, func(ctx c.C) {
@@ -825,6 +828,17 @@ func TestStartTls(t *testing.T) {
 			},
 		}
 		proto.expectTLS = true
-		mta.HandleClient(proto)
+		mta.HandleClient(proto, someIp)
+	})
+}
+
+// Simple test for representation of SessionId
+func TestSessionId(t *testing.T) {
+	c.Convey("Testing Session ID String()", t, func() {
+		id := Id{Timestamp: 1446302030, Counter: 42}
+		c.So(id.String(), c.ShouldEqual, "5634d14e2a")
+
+		id = Id{Timestamp: 2147483648, Counter: 4294967295}
+		c.So(id.String(), c.ShouldEqual, "80000000ffffffff")
 	})
 }

@@ -24,7 +24,7 @@ func handleMailDir(state *mta.State) {
 		// Open a maildir. If it does not exist, create it.
 		mailDir, err = maildir.New("./maildir", true)
 		if err != nil {
-			log.Println(err)
+			log.Errorln(err)
 		}
 	}
 
@@ -33,24 +33,30 @@ func handleMailDir(state *mta.State) {
 	// Save mail in maildir
 	filename, err := mailDir.CreateMail(dataReader)
 	if err != nil {
-		log.Println(err)
+		//log.Println(err)
+		log.WithFields(log.Fields{
+			"SessionId": state.SessionId.String(),
+		}).Error(err)
 	} else {
-		log.Println("Maildir: mail written to file: " + filename)
+		//log.Println("Maildir: mail written to file: " + filename)
+		log.WithFields(log.Fields{
+			"SessionId": state.SessionId.String(),
+		}).Info("Maildir: mail written to file: " + filename)
 	}
 }
 
 func mail(state *mta.State) {
-	log.Printf("From: %s\n", state.From.Address)
-	log.Printf("To: ")
+	log.Debugf("From: %s\n", state.From.Address)
+	log.Debugf("To: ")
 	for i, to := range state.To {
 		log.Printf("%s", to.Address)
 		if i != len(state.To)-1 {
 			log.Printf(",")
 		}
 	}
-	log.Printf("CONTENT_START:\n")
-	log.Printf("%s\n", string(state.Data))
-	log.Printf("CONTENT_END\n")
+	log.Debugf("CONTENT_START:\n")
+	log.Debugf("%s\n", string(state.Data))
+	log.Debugf("CONTENT_END\n")
 }
 
 type Chain struct {
@@ -64,6 +70,9 @@ func (c *Chain) HandleMail(state *mta.State) {
 }
 
 func main() {
+
+	log.SetLevel(log.DebugLevel)
+
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
 
@@ -80,7 +89,7 @@ func main() {
 	// Load config from JSON file
 	err := helpers.DecodeFile("config.json", &c)
 	if err != nil {
-		log.Println(err)
+		log.Warnln(err, "- Using default configuration instead.")
 	}
 
 	mta := mta.NewDefault(c,
@@ -94,6 +103,6 @@ func main() {
 	}()
 	err = mta.ListenAndServe()
 	if err != nil {
-		log.Println(err)
+		log.Errorln(err)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 
@@ -19,6 +20,27 @@ type Config struct {
 	TlsKey   string
 }
 
+// Session id
+type Id struct {
+	Timestamp int64
+	Counter   uint32
+}
+
+func (id *Id) String() string {
+	return strconv.FormatInt(id.Timestamp, 16) + strconv.FormatInt(int64(id.Counter), 16)
+}
+
+var globalCounter uint32 = 0
+var globalCounterLock = &sync.Mutex{}
+
+func generateSessionId() Id {
+	globalCounterLock.Lock()
+	defer globalCounterLock.Unlock()
+	globalCounter++
+	return Id{Timestamp: time.Now().Unix(), Counter: globalCounter}
+
+}
+
 // State contains all the state for a single client
 type State struct {
 	From         *smtp.MailAddress
@@ -26,6 +48,8 @@ type State struct {
 	Data         []byte
 	EightBitMIME bool
 	Secure       bool
+	SessionId    Id
+	Ip           string
 }
 
 // Handler is the interface that will be used when a mail was received.
@@ -106,7 +130,7 @@ func New(c Config, h Handler) *Mta {
 	if c.TlsCert != "" && c.TlsKey != "" {
 		cert, err := tls.LoadX509KeyPair(c.TlsCert, c.TlsKey)
 		if err != nil {
-			log.Printf("Could not load keypair: %v", err)
+			log.Warnf("Could not load keypair: %v", err)
 		} else {
 			mta.TlsConfig = &tls.Config{
 				Certificates: []tls.Certificate{cert},
@@ -157,7 +181,7 @@ func (s *DefaultMta) Stop() {
 func (s *DefaultMta) ListenAndServe() error {
 	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.mta.config.Hostname, s.mta.config.Port))
 	if err != nil {
-		log.Printf("Could not start listening: %v", err)
+		log.Errorln("Could not start listening: %v", err)
 		return err
 	}
 
@@ -205,21 +229,28 @@ func (s *DefaultMta) serve(c net.Conn) {
 
 	proto := smtp.NewMtaProtocol(c)
 	if proto == nil {
-		log.Printf("Could not create Mta protocol")
+		log.Errorf("Could not create Mta protocol")
 		c.Close()
 		return
 	}
-
-	s.mta.HandleClient(proto)
+	ip, _, _ := net.SplitHostPort(c.RemoteAddr().String())
+	s.mta.HandleClient(proto, ip)
 }
 
 // HandleClient Start communicating with a client
-func (s *Mta) HandleClient(proto smtp.Protocol) {
+func (s *Mta) HandleClient(proto smtp.Protocol, ip string) {
 	//log.Printf("Received connection")
 
 	// Hold state for this client connection
 	state := State{}
 	state.reset()
+	state.SessionId = generateSessionId()
+	state.Ip = ip
+
+	log.WithFields(log.Fields{
+		"SessionId": state.SessionId.String(),
+		"Ip":        state.Ip,
+	}).Debug("Received connection")
 
 	// Start with welcome message
 	proto.Send(smtp.Answer{
@@ -395,7 +426,10 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				break
 
 			} else if err != nil {
-				panic(err)
+				//panic(err)
+				log.WithFields(log.Fields{
+					"SessionId": state.SessionId.String(),
+				}).Panic(err)
 			}
 
 			s.MailHandler.HandleMail(&state)
@@ -439,11 +473,18 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 
 			err := proto.StartTls(s.TlsConfig)
 			if err != nil {
-				log.Println("Could not enable TLS mode")
+				//log.Println("Could not enable TLS mode")
+				log.WithFields(log.Fields{
+					"SessionId": state.SessionId.String(),
+				}).Info("Yay, we are using TLS now")
+				// --> TODO: what log level should this be?
 				break
 			}
 
-			log.Println("Yay, we are using TLS now")
+			//log.Println("Yay, we are using TLS now")
+			log.WithFields(log.Fields{
+				"SessionId": state.SessionId.String(),
+			}).Debug("Yay, we are using TLS now")
 			state.reset()
 			state.Secure = true
 
