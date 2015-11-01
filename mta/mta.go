@@ -14,6 +14,7 @@ import (
 )
 
 type Config struct {
+	Ip       string
 	Hostname string
 	Port     uint32
 	TlsCert  string
@@ -179,7 +180,7 @@ func (s *DefaultMta) Stop() {
 }
 
 func (s *DefaultMta) ListenAndServe() error {
-	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.mta.config.Hostname, s.mta.config.Port))
+	ln, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.mta.config.Ip, s.mta.config.Port))
 	if err != nil {
 		log.Errorln("Could not start listening: %v", err)
 		return err

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/gopistolet/gopistolet/log"
@@ -69,7 +70,7 @@ func handleSPF(state *mta.State) {
 	//
 	// header field is defined in RFC 5451 section 2.2
 	// Authentication-Results: receiver.example.org; spf=pass smtp.mailfrom=example.com;
-	headerField := "Authentication-Result: receiver.example.org;" + " spf=" + strings.ToLower(check) + " smtp.mailfrom=" + state.From.GetDomain() + ";\r\n"
+	headerField := fmt.Sprintf("Authentication-Result: %s; spf=%s smtp.mailfrom=%s;\r\n", hostname, strings.ToLower(check), state.From.GetDomain())
 	state.Data = append([]byte(headerField), state.Data...)
 
 }

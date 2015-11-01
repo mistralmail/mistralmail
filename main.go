@@ -20,6 +20,8 @@ func (c *Chain) HandleMail(state *mta.State) {
 	}
 }
 
+var hostname string
+
 func main() {
 
 	log.SetLevel(log.DebugLevel)
@@ -42,6 +44,8 @@ func main() {
 	if err != nil {
 		log.Warnln(err, "- Using default configuration instead.")
 	}
+
+	hostname = c.Hostname
 
 	mta := mta.NewDefault(c,
 		&Chain{handlers: []mta.Handler{
