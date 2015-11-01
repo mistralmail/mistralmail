@@ -1,4 +1,5 @@
 {
     "Hostname": "localhost",
+    "Ip" : "",
     "Port": 2525
 }

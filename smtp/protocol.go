@@ -5,8 +5,8 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/gopistolet/gopistolet/log"
 	"io"
-	"log"
 	"net"
 )
 
