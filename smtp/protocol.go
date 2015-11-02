@@ -5,9 +5,10 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/gopistolet/gopistolet/log"
 	"io"
 	"net"
+
+	"github.com/gopistolet/gopistolet/log"
 )
 
 type StatusCode uint32
@@ -366,8 +367,10 @@ type Protocol interface {
 	GetCmd() (*Cmd, error)
 	// Close the connection.
 	Close()
-	// StartTls starts the tls handshake
+	// StartTls starts the tls handshake.
 	StartTls(*tls.Config) error
+	// GetIP gets the ip of the client.
+	GetIP() net.IP
 }
 
 type MtaProtocol struct {
@@ -419,4 +422,14 @@ func (p *MtaProtocol) StartTls(c *tls.Config) error {
 	p.c = tlsCon
 	p.br.Reset(p.c)
 	return nil
+}
+
+func (p *MtaProtocol) GetIP() net.IP {
+	ip, _, err := net.SplitHostPort(p.c.RemoteAddr().String())
+	if err != nil {
+		log.Printf("Could not get ip: %v", p.c.RemoteAddr().String())
+		return nil
+	}
+
+	return net.ParseIP(ip)
 }
