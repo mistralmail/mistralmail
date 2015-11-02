@@ -13,6 +13,32 @@ import (
 	"github.com/sloonz/go-maildir"
 )
 
+var mailQueue = make(chan mta.State)
+
+func handleQueue(state *mta.State) {
+	mailQueue <- (*state)
+}
+
+func MailQueueWorker(q chan mta.State, handler mta.Handler) {
+
+	for {
+		state := <-q
+		log.Println("MailQueuWorker read state from channel:", state)
+		handler.HandleMail(&state)
+	}
+
+}
+
+type Chain struct {
+	handlers []mta.Handler
+}
+
+func (c *Chain) HandleMail(state *mta.State) {
+	for _, handler := range c.handlers {
+		handler.HandleMail(state)
+	}
+}
+
 var mailDir *maildir.Maildir
 
 func handleMailDir(state *mta.State) {

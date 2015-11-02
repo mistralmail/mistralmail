@@ -10,26 +10,6 @@ import (
 	"github.com/gopistolet/gopistolet/mta"
 )
 
-func MailQueueWorker(q chan *mta.State, handler mta.Handler) {
-
-	for {
-		state := <-q
-		log.Println("MailQueuWorker read state from channel:", state)
-		handler.HandleMail(state)
-	}
-
-}
-
-type Chain struct {
-	handlers []mta.Handler
-}
-
-func (c *Chain) HandleMail(state *mta.State) {
-	for _, handler := range c.handlers {
-		handler.HandleMail(state)
-	}
-}
-
 var hostname string
 
 func main() {
@@ -39,7 +19,6 @@ func main() {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
 
-	mailQueue := make(chan *mta.State)
 	go MailQueueWorker(mailQueue, &Chain{handlers: []mta.Handler{
 		mta.HandlerFunc(mail),
 		mta.HandlerFunc(handleSPF),
@@ -50,11 +29,10 @@ func main() {
 
 	// Default config
 	c := mta.Config{
-		Hostname:  "localhost",
-		Port:      25,
-		TlsCert:   "ssl/server.crt",
-		TlsKey:    "ssl/server.key",
-		MailQueue: mailQueue,
+		Hostname: "localhost",
+		Port:     25,
+		TlsCert:  "ssl/server.crt",
+		TlsKey:   "ssl/server.key",
 	}
 
 	// Load config from JSON file
@@ -65,8 +43,7 @@ func main() {
 
 	hostname = c.Hostname
 
-	mta := mta.NewDefault(c,
-		&Chain{handlers: []mta.Handler{}})
+	mta := mta.NewDefault(c, mta.HandlerFunc(handleQueue))
 	go func() {
 		<-sigc
 		mta.Stop()

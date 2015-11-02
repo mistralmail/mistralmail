@@ -14,12 +14,11 @@ import (
 )
 
 type Config struct {
-	Ip        string
-	Hostname  string
-	Port      uint32
-	TlsCert   string
-	TlsKey    string
-	MailQueue chan *State
+	Ip       string
+	Hostname string
+	Port     uint32
+	TlsCert  string
+	TlsKey   string
 }
 
 // Session id
@@ -434,9 +433,7 @@ func (s *Mta) HandleClient(proto smtp.Protocol, ip string) {
 				}).Panic(err)
 			}
 
-			//s.MailHandler.HandleMail(&state)
-			log.Println(state)
-			s.config.MailQueue <- &state
+			s.MailHandler.HandleMail(&state)
 
 			proto.Send(smtp.Answer{
 				Status:  smtp.Ok,
