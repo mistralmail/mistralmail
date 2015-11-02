@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"io"
+	"net"
 	"testing"
 
 	"github.com/gopistolet/gopistolet/smtp"
@@ -86,6 +87,10 @@ func (p *testProtocol) StartTls(c *tls.Config) error {
 	return nil
 }
 
+func (p *testProtocol) GetIP() net.IP {
+	return net.ParseIP("127.0.0.1")
+}
+
 // Tests answers for HELO,EHLO and QUIT
 func TestAnswersHeloQuit(t *testing.T) {
 	cfg := Config{
@@ -124,7 +129,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto, someIp)
+		mta.HandleClient(proto)
 	})
 
 	c.Convey("Testing answers for HELO and close connection.", t, func(ctx c.C) {
@@ -148,7 +153,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto, someIp)
+		mta.HandleClient(proto)
 
 	})
 
@@ -178,7 +183,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto, someIp)
+		mta.HandleClient(proto)
 	})
 
 	c.Convey("Testing answers for EHLO and close connection.", t, func(ctx c.C) {
@@ -201,7 +206,7 @@ func TestAnswersHeloQuit(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto, someIp)
+		mta.HandleClient(proto)
 
 	})
 }
@@ -275,7 +280,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto, someIp)
+		mta.HandleClient(proto)
 	})
 
 	c.Convey("Testing wrong sequence of MAIL,RCPT,DATA commands.", t, func(ctx c.C) {
@@ -311,7 +316,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto, someIp)
+			mta.HandleClient(proto)
 		})
 
 		c.Convey("DATA before MAIL", func() {
@@ -344,7 +349,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto, someIp)
+			mta.HandleClient(proto)
 		})
 
 		c.Convey("DATA before RCPT", func() {
@@ -384,7 +389,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto, someIp)
+			mta.HandleClient(proto)
 		})
 
 		c.Convey("Multiple MAIL commands.", func() {
@@ -433,7 +438,7 @@ func TestMailAnswersCorrectSequence(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto, someIp)
+			mta.HandleClient(proto)
 		})
 
 	})
@@ -509,7 +514,7 @@ func TestReset(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto, someIp)
+			mta.HandleClient(proto)
 		})
 
 		c.Convey("Manually reset", func() {
@@ -581,7 +586,7 @@ func TestReset(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto, someIp)
+			mta.HandleClient(proto)
 		})
 
 		// EHLO should reset state.
@@ -654,7 +659,7 @@ func TestReset(t *testing.T) {
 					},
 				},
 			}
-			mta.HandleClient(proto, someIp)
+			mta.HandleClient(proto)
 		})
 
 	})
@@ -703,7 +708,7 @@ func TestAnswersUnknownCmd(t *testing.T) {
 				},
 			},
 		}
-		mta.HandleClient(proto, someIp)
+		mta.HandleClient(proto)
 	})
 }
 
@@ -748,7 +753,7 @@ func TestStartTls(t *testing.T) {
 			},
 		}
 		proto.expectTLS = true
-		mta.HandleClient(proto, someIp)
+		mta.HandleClient(proto)
 	})
 
 	c.Convey("Testing if STARTTLS resets state", t, func(ctx c.C) {
@@ -792,7 +797,7 @@ func TestStartTls(t *testing.T) {
 			},
 		}
 		proto.expectTLS = true
-		mta.HandleClient(proto, someIp)
+		mta.HandleClient(proto)
 	})
 
 	c.Convey("Testing if we can STARTTLS twice", t, func(ctx c.C) {
@@ -828,7 +833,7 @@ func TestStartTls(t *testing.T) {
 			},
 		}
 		proto.expectTLS = true
-		mta.HandleClient(proto, someIp)
+		mta.HandleClient(proto)
 	})
 }
 

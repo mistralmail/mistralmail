@@ -50,7 +50,7 @@ type State struct {
 	EightBitMIME bool
 	Secure       bool
 	SessionId    Id
-	Ip           string
+	Ip           net.IP
 }
 
 // Handler is the interface that will be used when a mail was received.
@@ -234,23 +234,22 @@ func (s *DefaultMta) serve(c net.Conn) {
 		c.Close()
 		return
 	}
-	ip, _, _ := net.SplitHostPort(c.RemoteAddr().String())
-	s.mta.HandleClient(proto, ip)
+	s.mta.HandleClient(proto)
 }
 
 // HandleClient Start communicating with a client
-func (s *Mta) HandleClient(proto smtp.Protocol, ip string) {
+func (s *Mta) HandleClient(proto smtp.Protocol) {
 	//log.Printf("Received connection")
 
 	// Hold state for this client connection
 	state := State{}
 	state.reset()
 	state.SessionId = generateSessionId()
-	state.Ip = ip
+	state.Ip = proto.GetIP()
 
 	log.WithFields(log.Fields{
 		"SessionId": state.SessionId.String(),
-		"Ip":        state.Ip,
+		"Ip":        state.Ip.String(),
 	}).Debug("Received connection")
 
 	// Start with welcome message
@@ -474,18 +473,17 @@ func (s *Mta) HandleClient(proto smtp.Protocol, ip string) {
 
 			err := proto.StartTls(s.TlsConfig)
 			if err != nil {
-				//log.Println("Could not enable TLS mode")
 				log.WithFields(log.Fields{
+					"Ip":        state.Ip.String(),
 					"SessionId": state.SessionId.String(),
-				}).Info("Yay, we are using TLS now")
-				// --> TODO: what log level should this be?
+				}).Warningf("Could not enable TLS: %v", err)
 				break
 			}
 
-			//log.Println("Yay, we are using TLS now")
 			log.WithFields(log.Fields{
+				"Ip":        state.Ip.String(),
 				"SessionId": state.SessionId.String(),
-			}).Debug("Yay, we are using TLS now")
+			}).Debug("TLS enabled")
 			state.reset()
 			state.Secure = true
 

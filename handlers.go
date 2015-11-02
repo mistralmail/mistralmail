@@ -24,7 +24,8 @@ func handleMailDir(state *mta.State) {
 		// Open a maildir. If it does not exist, create it.
 		mailDir, err = maildir.New("./maildir", true)
 		if err != nil {
-			log.Errorln(err)
+			log.Errorf("Could not open maildir: %v", err)
+			return
 		}
 	}
 
@@ -33,13 +34,14 @@ func handleMailDir(state *mta.State) {
 	// Save mail in maildir
 	filename, err := mailDir.CreateMail(dataReader)
 	if err != nil {
-		//log.Println(err)
 		log.WithFields(log.Fields{
+			"Ip":        state.Ip.String(),
 			"SessionId": state.SessionId.String(),
 		}).Error(err)
 	} else {
 		//log.Println("Maildir: mail written to file: " + filename)
 		log.WithFields(log.Fields{
+			"Ip":        state.Ip.String(),
 			"SessionId": state.SessionId.String(),
 		}).Info("Maildir: mail written to file: " + filename)
 	}
@@ -49,20 +51,26 @@ func handleSPF(state *mta.State) {
 	// create SPF instance
 	spf, err := gospf.NewSPF(state.From.GetDomain(), &dns.GoSPFDNS{})
 	if err != nil {
-		log.Errorln(err)
+		log.WithFields(log.Fields{
+			"Ip":        state.Ip.String(),
+			"SessionId": state.SessionId.String(),
+		}).Infof("Could not create spf: %v", err)
 		return
 	}
 
 	// check the given IP on that instance
-	check, err := spf.CheckIP(state.Ip)
+	check, err := spf.CheckIP(state.Ip.String())
 	if err != nil {
-		log.Errorln(err)
+		log.WithFields(log.Fields{
+			"Ip":        state.Ip.String(),
+			"SessionId": state.SessionId.String(),
+		}).Errorf("Error while checking ip in spf: %v", err)
 		return
 	}
 
 	log.WithFields(log.Fields{
+		"Ip":     state.Ip.String(),
 		"Domain": state.From.GetDomain(),
-		"Ip":     state.Ip,
 	}).Info("SPF returned " + check)
 
 	// write Authentication-Results header
