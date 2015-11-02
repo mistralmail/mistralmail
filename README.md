@@ -8,7 +8,7 @@ GoPistolet will be a production-ready, and easy to setup mailserver (MTA/MSA/IMA
 Status
 ------
 
-Right now we have implemented the SMTP protocol [RFC 5321](go get github.com/gopistolet/gopistolet) and the MTA part.
+Right now we have implemented the SMTP protocol [RFC 5321](https://tools.ietf.org/html/rfc5321) and the MTA part.
 The server listens on a socket and saves all incoming messages in a maildir.
 
 Screenshots of the maildir, openened with [Mutt](http://www.mutt.org):
