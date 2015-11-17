@@ -9,16 +9,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/log"
 	"github.com/gopistolet/gopistolet/smtp"
 )
 
 type Config struct {
-	Ip       string
-	Hostname string
-	Port     uint32
-	TlsCert  string
-	TlsKey   string
+	Ip        string
+	Hostname  string
+	Port      uint32
+	TlsCert   string
+	TlsKey    string
+	Blacklist helpers.Blacklist
 }
 
 // Session id
@@ -251,6 +253,16 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 		"SessionId": state.SessionId.String(),
 		"Ip":        state.Ip.String(),
 	}).Debug("Received connection")
+
+	if s.config.Blacklist != nil {
+		if s.config.Blacklist.CheckIp(state.Ip.String()) {
+			log.WithFields(log.Fields{
+				"SessionId": state.SessionId.String(),
+				"Ip":        state.Ip.String(),
+			}).Warn("IP found in Blacklist, closing handler")
+			proto.Close()
+		}
+	}
 
 	// Start with welcome message
 	proto.Send(smtp.Answer{

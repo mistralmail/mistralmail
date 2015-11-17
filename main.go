@@ -25,18 +25,24 @@ func main() {
 		mta.HandlerFunc(handleMailDir),
 	}})
 
+	nixspamBlacklist, err := helpers.NewNixspam()
+	if err != nil {
+		log.Warnln("Couldn't create Nixspam Blacklist instance: ", err)
+	}
+
 	log.Println("GoPistolet at your service!")
 
 	// Default config
 	c := mta.Config{
-		Hostname: "localhost",
-		Port:     25,
-		TlsCert:  "ssl/server.crt",
-		TlsKey:   "ssl/server.key",
+		Hostname:  "localhost",
+		Port:      25,
+		TlsCert:   "ssl/server.crt",
+		TlsKey:    "ssl/server.key",
+		Blacklist: nixspamBlacklist,
 	}
 
 	// Load config from JSON file
-	err := helpers.DecodeFile("config.json", &c)
+	err = helpers.DecodeFile("config.json", &c)
 	if err != nil {
 		log.Warnln(err, "- Using default configuration instead.")
 	}
