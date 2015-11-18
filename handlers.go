@@ -23,7 +23,7 @@ func MailQueueWorker(q chan mta.State, handler mta.Handler) {
 
 	for {
 		state := <-q
-		log.Println("MailQueuWorker read state from channel:", state)
+		//log.Println("MailQueuWorker read state from channel:", state)
 		handler.HandleMail(&state)
 	}
 

@@ -261,6 +261,11 @@ func (s *Mta) HandleClient(proto smtp.Protocol) {
 				"Ip":        state.Ip.String(),
 			}).Warn("IP found in Blacklist, closing handler")
 			proto.Close()
+		} else {
+			log.WithFields(log.Fields{
+				"SessionId": state.SessionId.String(),
+				"Ip":        state.Ip.String(),
+			}).Debug("IP not found in Blacklist")
 		}
 	}
 
