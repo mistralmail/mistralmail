@@ -48,6 +48,11 @@
                 sock.send(JSON.stringify(data, null, 4));
             });
             
+            $('#restart-gopistolet').click( function(event) {
+                console.log("Restart");
+                sock.send("restart")
+            });
+            
         });
         
         
@@ -94,6 +99,8 @@
                 <button type="submit" class="pure-button pure-button-primary">Save</button>
             </div>
         </form>
+        
+        <a id="restart-gopistolet" class="pure-button pure-button-primary">Restart</a>
 
         
     </div>

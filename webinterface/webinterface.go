@@ -8,6 +8,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"syscall"
+	"os"
 )
 
 var config mta.Config
@@ -68,6 +70,11 @@ func handleSocket(ws *websocket.Conn) {
 		if err = websocket.Message.Receive(ws, &reply); err != nil {
 			log.Println("Can't receive: " + err.Error())
 			break
+		}
+
+		if reply == "restart" {
+			log.Println("Restart issued...")
+			syscall.Exec(os.Args[0], os.Args, os.Environ())
 		}
 
 		// In this naive version we handle all received
