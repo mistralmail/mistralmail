@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/gopistolet/gopistolet/log"
-	"github.com/gopistolet/gopistolet/mta"
+	"github.com/gopistolet/smtp/mta"
 	"github.com/gopistolet/gospf"
 	"github.com/gopistolet/gospf/dns"
 	"github.com/sloonz/go-maildir"
