@@ -4,18 +4,24 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
+	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/log"
-	"github.com/gopistolet/smtp/mta"
 	"github.com/gopistolet/gospf"
 	"github.com/gopistolet/gospf/dns"
+	"github.com/gopistolet/smtp/mta"
 	"github.com/sloonz/go-maildir"
 )
 
 var mailQueue = make(chan mta.State)
 
 func handleQueue(state *mta.State) {
+	// Save mail to disk
+	save(state)
+
+	// Put mail in mail queue
 	mailQueue <- (*state)
 }
 
@@ -23,8 +29,13 @@ func MailQueueWorker(q chan mta.State, handler mta.Handler) {
 
 	for {
 		state := <-q
-		//log.Println("MailQueuWorker read state from channel:", state)
+
+		// Handle mail
 		handler.HandleMail(&state)
+
+		// Remove mail from disk
+		delete(&state)
+
 	}
 
 }
@@ -121,4 +132,42 @@ func mail(state *mta.State) {
 	log.Debugf("CONTENT_START:\n")
 	log.Debugf("%s\n", string(state.Data))
 	log.Debugf("CONTENT_END\n")
+}
+
+func fileNameForState(state *mta.State) (s string) {
+	s += state.SessionId.String()
+	s += "." + state.From.String()
+	s += ".json"
+	return
+}
+
+// Save mails to disk, since we are responsible for the message do be delivered
+func save(state *mta.State) {
+
+	filename := "mailstore/" + fileNameForState(state)
+
+	err := helpers.EncodeFile(filename, state)
+	if err != nil {
+		log.Fatal("Couldn't save mail to disk: ", err.Error())
+	}
+
+	log.WithFields(log.Fields{
+		"Ip":        state.Ip.String(),
+		"SessionId": state.SessionId.String(),
+	}).Debug("Serialized mail to disk: ", filename)
+
+}
+
+func delete(state *mta.State) {
+	filename := "mailstore/" + fileNameForState(state)
+	err := os.Remove(filename)
+	if err != nil {
+		log.Warnln("Couldn't save mail to disk: ", err.Error())
+		return
+	}
+
+	log.WithFields(log.Fields{
+		"Ip":        state.Ip.String(),
+		"SessionId": state.SessionId.String(),
+	}).Debug("Removed temp mail from disk: ", filename)
 }

@@ -60,6 +60,10 @@ func Fatalf(format string, v ...interface{}) {
 	logrus.Fatalf(format, v...)
 }
 
+func Fatal(v ...interface{}) {
+	logrus.Fatal(v...)
+}
+
 func Debugf(format string, v ...interface{}) {
 	logrus.Debugf(format, v...)
 }
