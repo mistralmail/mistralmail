@@ -12,12 +12,13 @@ import (
 	"github.com/gopistolet/gospf"
 	"github.com/gopistolet/gospf/dns"
 	"github.com/gopistolet/smtp/mta"
+	"github.com/gopistolet/smtp/smtp"
 	"github.com/sloonz/go-maildir"
 )
 
-var mailQueue = make(chan mta.State)
+var mailQueue = make(chan smtp.State)
 
-func handleQueue(state *mta.State) {
+func handleQueue(state *smtp.State) {
 	// Save mail to disk
 	save(state)
 
@@ -25,7 +26,7 @@ func handleQueue(state *mta.State) {
 	mailQueue <- (*state)
 }
 
-func MailQueueWorker(q chan mta.State, handler mta.Handler) {
+func MailQueueWorker(q chan smtp.State, handler mta.Handler) {
 
 	for {
 		state := <-q
@@ -44,7 +45,7 @@ type Chain struct {
 	handlers []mta.Handler
 }
 
-func (c *Chain) HandleMail(state *mta.State) {
+func (c *Chain) HandleMail(state *smtp.State) {
 	for _, handler := range c.handlers {
 		handler.HandleMail(state)
 	}
@@ -52,7 +53,7 @@ func (c *Chain) HandleMail(state *mta.State) {
 
 var mailDir *maildir.Maildir
 
-func handleMailDir(state *mta.State) {
+func handleMailDir(state *smtp.State) {
 	err := errors.New("")
 
 	// Open maildir if it's not yet open
@@ -84,7 +85,7 @@ func handleMailDir(state *mta.State) {
 	}
 }
 
-func handleSPF(state *mta.State) {
+func handleSPF(state *smtp.State) {
 	// create SPF instance
 	spf, err := gospf.NewSPF(state.From.GetDomain(), &dns.GoSPFDNS{})
 	if err != nil {
@@ -120,21 +121,7 @@ func handleSPF(state *mta.State) {
 
 }
 
-func mail(state *mta.State) {
-	log.Debugf("From: %s\n", state.From.Address)
-	log.Debugf("To: ")
-	for i, to := range state.To {
-		log.Printf("%s", to.Address)
-		if i != len(state.To)-1 {
-			log.Printf(",")
-		}
-	}
-	log.Debugf("CONTENT_START:\n")
-	log.Debugf("%s\n", string(state.Data))
-	log.Debugf("CONTENT_END\n")
-}
-
-func fileNameForState(state *mta.State) (s string) {
+func fileNameForState(state *smtp.State) (s string) {
 	s += state.SessionId.String()
 	s += "." + state.From.String()
 	s += ".json"
@@ -142,7 +129,7 @@ func fileNameForState(state *mta.State) (s string) {
 }
 
 // Save mails to disk, since we are responsible for the message do be delivered
-func save(state *mta.State) {
+func save(state *smtp.State) {
 
 	filename := "mailstore/" + fileNameForState(state)
 
@@ -158,7 +145,7 @@ func save(state *mta.State) {
 
 }
 
-func delete(state *mta.State) {
+func delete(state *smtp.State) {
 	filename := "mailstore/" + fileNameForState(state)
 	err := os.Remove(filename)
 	if err != nil {

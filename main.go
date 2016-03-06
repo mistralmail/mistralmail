@@ -20,7 +20,6 @@ func main() {
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
 
 	go MailQueueWorker(mailQueue, &Chain{handlers: []mta.Handler{
-		mta.HandlerFunc(mail),
 		mta.HandlerFunc(handleSPF),
 		mta.HandlerFunc(handleMailDir),
 	}})
