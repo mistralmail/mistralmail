@@ -86,7 +86,7 @@ func handleMailDir(state *mta.State) {
 
 func handleSPF(state *mta.State) {
 	// create SPF instance
-	spf, err := gospf.NewSPF(state.From.GetDomain(), &dns.GoSPFDNS{})
+	spf, err := gospf.New(state.From.GetDomain(), &dns.GoSPFDNS{})
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Ip":        state.Ip.String(),
