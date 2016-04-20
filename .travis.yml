@@ -15,8 +15,6 @@ install:
   - go get github.com/gopistolet/smtp/smtp
   - go get github.com/gopistolet/smtp/mta
   - go get github.com/gopistolet/gospf
-  - go get golang.org/x/tools/cmd/vet
 
 script:
-  - go vet ./...
-  - go test ./...
+  - go test -v ./...
