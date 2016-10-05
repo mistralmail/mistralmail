@@ -116,7 +116,7 @@ func handleSPF(state *smtp.State) {
 	//
 	// header field is defined in RFC 5451 section 2.2
 	// Authentication-Results: receiver.example.org; spf=pass smtp.mailfrom=example.com;
-	headerField := fmt.Sprintf("Authentication-Result: %s; spf=%s smtp.mailfrom=%s;\r\n", hostname, strings.ToLower(check), state.From.GetDomain())
+	headerField := fmt.Sprintf("Authentication-Results: %s; spf=%s smtp.mailfrom=%s;\r\n", hostname, strings.ToLower(check), state.From.GetDomain())
 	state.Data = append([]byte(headerField), state.Data...)
 
 }
