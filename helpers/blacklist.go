@@ -54,6 +54,6 @@ func (ns *Nixspam) CheckIp(ip string) bool {
 	if index == len(ns.IpList) {
 		return false
 	}
-	
+
 	return ns.IpList[index] == ip
 }

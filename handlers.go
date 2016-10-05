@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/log"
@@ -49,6 +50,10 @@ func (c *Chain) HandleMail(state *smtp.State) {
 	for _, handler := range c.handlers {
 		handler.HandleMail(state)
 	}
+}
+
+func handleMailStore(state *smtp.State) {
+
 }
 
 var mailDir *maildir.Maildir
@@ -119,6 +124,38 @@ func handleSPF(state *smtp.State) {
 	headerField := fmt.Sprintf("Authentication-Result: %s; spf=%s smtp.mailfrom=%s;\r\n", hostname, strings.ToLower(check), state.From.GetDomain())
 	state.Data = append([]byte(headerField), state.Data...)
 
+}
+
+func headerReceived(state *smtp.State) {
+
+	/*
+		RFC 2076 3.2 Trace information
+
+		    Trace of MTAs which a message has passed.
+
+
+		RFC 5322 3.6.7.
+
+		    received        =   "Received:" *received-token ";" date-time CRLF
+
+		    received-token  =   word / angle-addr / addr-spec / domain
+
+
+		Example:
+
+		    Received: from mail.example.com (192.168.0.10) by some.mail.server.example.com (192.168.0.11) with Microsoft SMTP Server id 14.3.319.2; Wed, 5 Oct 2016 14:57:46 +0200
+	*/
+	date := time.Now().Format(time.RFC1123Z) // date-time in RFC 5322 is like RFC 1123Z
+	headerField := fmt.Sprintf("Received: from %s (%s) by %s (%s) with GoPistolet; %s\r\n", state.Hostname, state.Ip, c.Hostname, c.Ip, date)
+	state.Data = append([]byte(headerField), state.Data...)
+
+	// TODO: 'by IP' is not necessarily set in config
+
+	log.WithFields(log.Fields{
+		"Ip":        state.Ip.String(),
+		"SessionId": state.SessionId.String(),
+		"Hostname":  state.Hostname,
+	}).Debug("Added 'received' header: '", headerField, "'")
 }
 
 func fileNameForState(state *smtp.State) (s string) {
