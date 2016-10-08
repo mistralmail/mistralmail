@@ -1,0 +1,37 @@
+package handlers
+
+import (
+	"github.com/gopistolet/smtp/smtp"
+
+	. "github.com/smartystreets/goconvey/convey"
+	"testing"
+)
+
+var count int
+
+type TestHandler struct {
+}
+
+func (th *TestHandler) Handle(state *smtp.State) {
+	count++
+}
+
+func TestHandlersAddress(t *testing.T) {
+
+	// Very stupid test to make sure it does something (and keeps doing)
+	Convey("Testing HandlerMechanism", t, func() {
+
+		hm := HandlerMachanism{
+			Handlers: []Handler{
+				&TestHandler{},
+				&TestHandler{},
+			},
+		}
+
+		hm.HandleMail(nil)
+
+		So(count, ShouldEqual, 2)
+
+	})
+
+}

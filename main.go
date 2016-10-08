@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/gopistolet/gopistolet/handlers"
 	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/log"
 	"github.com/gopistolet/smtp/mta"
@@ -18,11 +19,6 @@ func main() {
 
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
-
-	go MailQueueWorker(mailQueue, &Chain{handlers: []mta.Handler{
-		mta.HandlerFunc(handleSPF),
-		mta.HandlerFunc(handleMailDir),
-	}})
 
 	nixspamBlacklist, err := helpers.NewNixspam()
 	if err != nil {
@@ -46,7 +42,7 @@ func main() {
 
 	hostname = c.Hostname
 
-	mta := mta.NewDefault(c, mta.HandlerFunc(handleQueue))
+	mta := mta.NewDefault(c, handlers.LoadHandlers())
 	go func() {
 		<-sigc
 		mta.Stop()
