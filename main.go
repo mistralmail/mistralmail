@@ -11,6 +11,7 @@ import (
 )
 
 var hostname string
+var c mta.Config
 
 func main() {
 
@@ -20,6 +21,7 @@ func main() {
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
 
 	go MailQueueWorker(mailQueue, &Chain{handlers: []mta.Handler{
+		mta.HandlerFunc(headerReceived),
 		mta.HandlerFunc(handleSPF),
 		mta.HandlerFunc(handleMailDir),
 	}})
@@ -32,7 +34,7 @@ func main() {
 	log.Println("GoPistolet at your service!")
 
 	// Default config
-	c := mta.Config{
+	c = mta.Config{
 		Hostname:  "localhost",
 		Port:      25,
 		Blacklist: nixspamBlacklist,
