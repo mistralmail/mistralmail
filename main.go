@@ -12,6 +12,7 @@ import (
 )
 
 var hostname string
+var c mta.Config
 
 func main() {
 
@@ -28,7 +29,7 @@ func main() {
 	log.Println("GoPistolet at your service!")
 
 	// Default config
-	c := mta.Config{
+	c = mta.Config{
 		Hostname:  "localhost",
 		Port:      25,
 		Blacklist: nixspamBlacklist,
@@ -42,7 +43,7 @@ func main() {
 
 	hostname = c.Hostname
 
-	mta := mta.NewDefault(c, handlers.LoadHandlers())
+	mta := mta.NewDefault(c, handlers.LoadHandlers(&c))
 	go func() {
 		<-sigc
 		mta.Stop()

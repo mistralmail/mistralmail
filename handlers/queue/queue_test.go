@@ -11,7 +11,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSaveHandler(t *testing.T) {
+func TestMailQueueHandler(t *testing.T) {
 
 	Convey("Testing save() and delete() handler", t, func() {
 
