@@ -1,10 +1,10 @@
 package received
 
 import (
+	"bytes"
 	"net"
-    "bytes"
-    "strings"
-    "testing"
+	"strings"
+	"testing"
 
 	"github.com/gopistolet/smtp/mta"
 	"github.com/gopistolet/smtp/smtp"

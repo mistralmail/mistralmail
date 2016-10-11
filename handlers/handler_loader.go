@@ -12,7 +12,7 @@ func LoadHandlers(c *mta.Config) *HandlerMachanism {
 	return &HandlerMachanism{
 		Handlers: []Handler{
 			received.New(c),
-			spf.New(),
+			spf.New(c),
 			maildir.New(),
 		},
 	}

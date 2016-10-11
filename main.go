@@ -11,7 +11,6 @@ import (
 	"github.com/gopistolet/smtp/mta"
 )
 
-var hostname string
 var c mta.Config
 
 func main() {
@@ -40,8 +39,6 @@ func main() {
 	if err != nil {
 		log.Warnln(err, "- Using default configuration instead.")
 	}
-
-	hostname = c.Hostname
 
 	mta := mta.NewDefault(c, handlers.LoadHandlers(&c))
 	go func() {
