@@ -26,3 +26,7 @@ func (h *HandlerMachanism) HandleMail(state *smtp.State) {
 		handler.Handle(state)
 	}
 }
+
+func (h *HandlerMachanism) Handle(state *smtp.State) {
+    h.HandleMail(state)
+}
