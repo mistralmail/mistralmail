@@ -5,12 +5,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/gopistolet/gopistolet/handlers"
 	"github.com/gopistolet/gopistolet/helpers"
 	"github.com/gopistolet/gopistolet/log"
 	"github.com/gopistolet/smtp/mta"
 )
 
-var hostname string
 var c mta.Config
 
 func main() {
@@ -19,12 +19,6 @@ func main() {
 
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
-
-	go MailQueueWorker(mailQueue, &Chain{handlers: []mta.Handler{
-		mta.HandlerFunc(headerReceived),
-		mta.HandlerFunc(handleSPF),
-		mta.HandlerFunc(handleMailDir),
-	}})
 
 	nixspamBlacklist, err := helpers.NewNixspam()
 	if err != nil {
@@ -46,9 +40,7 @@ func main() {
 		log.Warnln(err, "- Using default configuration instead.")
 	}
 
-	hostname = c.Hostname
-
-	mta := mta.NewDefault(c, mta.HandlerFunc(handleQueue))
+	mta := mta.NewDefault(c, handlers.LoadHandlers(&c))
 	go func() {
 		<-sigc
 		mta.Stop()

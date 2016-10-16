@@ -1,3 +1,4 @@
 gopistolet
 config.json
 maildir
+!handlers/maildir
