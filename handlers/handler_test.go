@@ -28,7 +28,7 @@ func TestHandlersAddress(t *testing.T) {
 			},
 		}
 
-		hm.HandleMail(nil)
+		hm.Handle(nil)
 
 		So(count, ShouldEqual, 2)
 

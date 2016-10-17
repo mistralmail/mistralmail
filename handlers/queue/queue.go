@@ -28,7 +28,7 @@ func MailQueueWorker(q chan smtp.State, handler mta.Handler) {
 		state := <-q
 
 		// Handle mail
-		handler.HandleMail(&state)
+		handler.Handle(&state)
 
 		// Remove mail from disk
 		delete(&state)

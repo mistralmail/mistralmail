@@ -21,12 +21,8 @@ type HandlerMachanism struct {
 	Handlers []Handler
 }
 
-func (h *HandlerMachanism) HandleMail(state *smtp.State) {
-	for _, handler := range h.Handlers {
-		handler.Handle(state)
-	}
-}
-
 func (h *HandlerMachanism) Handle(state *smtp.State) {
-    h.HandleMail(state)
+    for _, handler := range h.Handlers {
+        handler.Handle(state)
+    }
 }
