@@ -1,4 +1,4 @@
-package spf
+package authentication
 
 import (
 	"fmt"
@@ -11,17 +11,18 @@ import (
 	"github.com/gopistolet/smtp/smtp"
 )
 
-func New(c *mta.Config) *Spf {
-	return &Spf{
+func New(c *mta.Config) *Authentication {
+	return &Authentication{
 		config: c,
 	}
 }
 
-type Spf struct {
-	config *mta.Config
+type Authentication struct {
+	config    *mta.Config
+	spfResult string
 }
 
-func (handler *Spf) Handle(state *smtp.State) {
+func (handler *Authentication) Handle(state *smtp.State) {
 	// create SPF instance
 	spf, err := gospf.New(state.From.GetDomain(), &dns.GoSPFDNS{})
 	if err != nil {
@@ -47,12 +48,23 @@ func (handler *Spf) Handle(state *smtp.State) {
 		"Domain": state.From.GetDomain(),
 	}).Info("SPF returned " + check)
 
+	handler.spfResult = check
+
+	handler.authenticationResultsHeader(state)
+	handler.receivedSpfHeader(state)
+}
+
+func (handler *Authentication) authenticationResultsHeader(state *smtp.State) {
+
 	// write Authentication-Results header
 	// TODO: need value from config here...
 	//
 	// header field is defined in RFC 5451 section 2.2
 	// Authentication-Results: receiver.example.org; spf=pass smtp.mailfrom=example.com;
-	headerField := fmt.Sprintf("Authentication-Results: %s; spf=%s smtp.mailfrom=%s;\r\n", handler.config.Hostname, strings.ToLower(check), state.From.GetDomain())
+	headerField := fmt.Sprintf("Authentication-Results: %s; spf=%s smtp.mailfrom=%s;\r\n", handler.config.Hostname, strings.ToLower(handler.spfResult), state.From.GetDomain())
 	state.Data = append([]byte(headerField), state.Data...)
+}
+
+func (handler *Authentication) receivedSpfHeader(state *smtp.State) {
 
 }
