@@ -55,16 +55,44 @@ func (handler *Authentication) Handle(state *smtp.State) {
 }
 
 func (handler *Authentication) authenticationResultsHeader(state *smtp.State) {
-
-	// write Authentication-Results header
-	// TODO: need value from config here...
-	//
-	// header field is defined in RFC 5451 section 2.2
-	// Authentication-Results: receiver.example.org; spf=pass smtp.mailfrom=example.com;
+	/*
+		header field is defined in RFC 5451 section 2.2 and RFC 7601
+		Authentication-Results: receiver.example.org; spf=pass smtp.mailfrom=example.com;
+	*/
 	headerField := fmt.Sprintf("Authentication-Results: %s; spf=%s smtp.mailfrom=%s;\r\n", handler.config.Hostname, strings.ToLower(handler.spfResult), state.From.GetDomain())
 	state.Data = append([]byte(headerField), state.Data...)
 }
 
 func (handler *Authentication) receivedSpfHeader(state *smtp.State) {
+	/*
+		RFC 4408
 
+		header-field     = "Received-SPF:" [CFWS] result FWS [comment FWS]
+						   [ key-value-list ] CRLF
+
+		result           = "Pass" / "Fail" / "SoftFail" / "Neutral" /
+						   "None" / "TempError" / "PermError"
+
+		key-value-list   = key-value-pair *( ";" [CFWS] key-value-pair )
+						   [";"]
+
+		key-value-pair   = key [CFWS] "=" ( dot-atom / quoted-string )
+
+		key              = "client-ip" / "envelope-from" / "helo" /
+						   "problem" / "receiver" / "identity" /
+							mechanism / "x-" name / name
+
+		identity         = "mailfrom"   ; for the "MAIL FROM" identity
+						   / "helo"     ; for the "HELO" identity
+						   / name       ; other identities
+
+		dot-atom         = <unquoted word as per [RFC2822]>
+		quoted-string    = <quoted string as per [RFC2822]>
+		comment          = <comment string as per [RFC2822]>
+		CFWS             = <comment or folding white space as per [RFC2822]>
+		FWS              = <folding white space as per [RFC2822]>
+		CRLF             = <standard end-of-line token as per [RFC2822]>
+	*/
+	headerField := fmt.Sprintf("Received-SPF: %s client-ip=%s; receiver=%s;\r\n", handler.spfResult, state.Ip, handler.config.Hostname)
+	state.Data = append([]byte(headerField), state.Data...)
 }
