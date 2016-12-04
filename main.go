@@ -15,6 +15,7 @@ var c mta.Config
 
 func main() {
 
+	log.Timestamp()
 	log.SetLevel(log.DebugLevel)
 
 	sigc := make(chan os.Signal, 1)

@@ -27,6 +27,14 @@ const (
 	DebugLevel
 )
 
+// Timestamp prints logs with timestam
+func Timestamp() {
+	customFormatter := new(logrus.TextFormatter)
+	customFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	customFormatter.FullTimestamp = true
+	logrus.SetFormatter(customFormatter)
+}
+
 // SetLevel sets the standard logger level.
 func SetLevel(level Level) {
 	logrus.SetLevel(logrus.Level(level))
