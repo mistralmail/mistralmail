@@ -13,9 +13,9 @@ The server listens on a socket and saves all incoming messages in a maildir.
 
 Screenshots of the maildir, openened with [Mutt](http://www.mutt.org):
 
-![maildir with mutt](http://denbeke.be/foto/GoPistolet_maildir.png)
+![maildir with mutt](https://denbeke.be/foto/GoPistolet_maildir.png)
 
-![maildir with mutt](http://denbeke.be/foto/GoPistolet_maildir2.png)
+![maildir with mutt](https://denbeke.be/foto/GoPistolet_maildir2.png)
 
 
 Installing
@@ -42,8 +42,8 @@ Copy `config.sample.json` to `config.json` and edit the file if you want to chan
 Acknowledgements
 -----------------
 
-* [GoConvey](github.com/smartystreets/goconvey/convey)
-* [go-maildir](github.com/sloonz/go-maildir)
+* [GoConvey](https://github.com/smartystreets/goconvey)
+* [go-maildir](https://github.com/sloonz/go-maildir)
 
 Authors
 -------
