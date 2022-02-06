@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"testing"
+
 	"github.com/gopistolet/smtp/smtp"
 
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
 
 var count int
@@ -12,8 +13,9 @@ var count int
 type TestHandler struct {
 }
 
-func (th *TestHandler) Handle(state *smtp.State) {
+func (th *TestHandler) Handle(state *smtp.State) error {
 	count++
+	return nil
 }
 
 func TestHandlersAddress(t *testing.T) {

@@ -10,7 +10,7 @@ import (
  * A handler is a struct on which the 'Handle' method can be called with an SMTP state
  */
 type Handler interface {
-	Handle(state *smtp.State)
+	Handle(state *smtp.State) error
 }
 
 /**
@@ -22,7 +22,7 @@ type HandlerMachanism struct {
 }
 
 func (h *HandlerMachanism) Handle(state *smtp.State) {
-    for _, handler := range h.Handlers {
-        handler.Handle(state)
-    }
+	for _, handler := range h.Handlers {
+		handler.Handle(state)
+	}
 }

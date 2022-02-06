@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gopistolet/gopistolet/log"
 	"github.com/gopistolet/smtp/mta"
 	"github.com/gopistolet/smtp/smtp"
+	log "github.com/sirupsen/logrus"
 )
 
 func New(c *mta.Config) *Received {

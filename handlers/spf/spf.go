@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gopistolet/gopistolet/log"
 	"github.com/gopistolet/gospf"
 	"github.com/gopistolet/gospf/dns"
 	"github.com/gopistolet/smtp/mta"
 	"github.com/gopistolet/smtp/smtp"
+	log "github.com/sirupsen/logrus"
 )
 
 func New(c *mta.Config) *Spf {
@@ -21,7 +21,7 @@ type Spf struct {
 	config *mta.Config
 }
 
-func (handler *Spf) Handle(state *smtp.State) {
+func (handler *Spf) Handle(state *smtp.State) error {
 	// create SPF instance
 	spf, err := gospf.New(state.From.GetDomain(), &dns.GoSPFDNS{})
 	if err != nil {
@@ -29,7 +29,7 @@ func (handler *Spf) Handle(state *smtp.State) {
 			"Ip":        state.Ip.String(),
 			"SessionId": state.SessionId.String(),
 		}).Infof("Could not create spf: %v", err)
-		return
+		return nil
 	}
 
 	// check the given IP on that instance
@@ -39,7 +39,7 @@ func (handler *Spf) Handle(state *smtp.State) {
 			"Ip":        state.Ip.String(),
 			"SessionId": state.SessionId.String(),
 		}).Errorf("Error while checking ip in spf: %v", err)
-		return
+		return nil
 	}
 
 	log.WithFields(log.Fields{
@@ -54,5 +54,7 @@ func (handler *Spf) Handle(state *smtp.State) {
 	// Authentication-Results: receiver.example.org; spf=pass smtp.mailfrom=example.com;
 	headerField := fmt.Sprintf("Authentication-Results: %s; spf=%s smtp.mailfrom=%s;\r\n", handler.config.Hostname, strings.ToLower(check), state.From.GetDomain())
 	state.Data = append([]byte(headerField), state.Data...)
+
+	return nil
 
 }
