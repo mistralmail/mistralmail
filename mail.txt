@@ -1,0 +1,13 @@
+HELO sender.example.org
+MAIL FROM:<test@localhost>
+RCPT TO:username@localhost
+DATA
+From: contact@example.org
+To: username@localhost
+Subject: GoPistolet Test
+Date: Wed, 11 May 2016 14:31:59 +0000
+Content-Type: text/plain
+
+Hello world GoPistolet!
+.
+QUIT

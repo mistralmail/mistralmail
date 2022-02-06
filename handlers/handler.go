@@ -21,8 +21,12 @@ type HandlerMachanism struct {
 	Handlers []Handler
 }
 
-func (h *HandlerMachanism) Handle(state *smtp.State) {
+func (h *HandlerMachanism) Handle(state *smtp.State) error {
 	for _, handler := range h.Handlers {
-		handler.Handle(state)
+		err := handler.Handle(state)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }

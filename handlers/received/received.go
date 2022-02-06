@@ -19,7 +19,7 @@ type Received struct {
 	config *mta.Config
 }
 
-func (handler *Received) Handle(state *smtp.State) {
+func (handler *Received) Handle(state *smtp.State) error {
 
 	/*
 	   RFC 2076 3.2 Trace information
@@ -49,4 +49,6 @@ func (handler *Received) Handle(state *smtp.State) {
 		"SessionId": state.SessionId.String(),
 		"Hostname":  state.Hostname,
 	}).Debug("Added 'received' header: '", headerField, "'")
+
+	return nil
 }
