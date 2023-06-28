@@ -16,10 +16,13 @@ It will seed the database with a user with `username` and `password` as username
 
 Navigate to the parent folder and execute the following commands so you don't have to do rewrite in the go mod file.
 
-go work init
-go work use smtp
-go work use imap-backend
+    go work init
+    go work use smtp
+    go work use imap-backend
 
+Also set `GOPRIVATE` so it fetches the gopistolet repos over SSH:
+
+    go env -w "GOPRIVATE=github.com/gopistolet/*"
 
 
 ## Acknowledgements

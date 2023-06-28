@@ -30,6 +30,8 @@ github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORR
 github.com/gopistolet/gopistolet v0.0.0-20210418093520-a5395f728f8d/go.mod h1:829vbvSbIxIFmndBWd2TXXR6zSgSMvp7VeaLfNRhZpo=
 github.com/gopistolet/gospf v0.0.0-20160422193406-a58dd1fcbf50 h1:Ar3DB5g+ChkygHMnOxEx7ykW2ho43Un6LkUq0CLVbtk=
 github.com/gopistolet/gospf v0.0.0-20160422193406-a58dd1fcbf50/go.mod h1:+jqeNyNag72RrwUfNIzyr/MTwWT2Erd0saswj/4wmlU=
+github.com/gopistolet/imap-backend v0.0.0-20230628175647-8b591c7300bd h1:kiJasCcB8ZT4D2MfIWpm7ZmrbkF6WNSe8v74vnlFJfo=
+github.com/gopistolet/imap-backend v0.0.0-20230628175647-8b591c7300bd/go.mod h1:+kb6rPRt+l5haxc4HrRgJZ/nz5MrwW4SP+jgEie0fNQ=
 github.com/gopistolet/smtp v0.0.0-20190814094038-be4f841baca2/go.mod h1:C0g2GU2lA0MaqPOXkn0h1oUnAfYT0PzE/MV96zbR+o8=
 github.com/gopistolet/smtp v0.0.0-20210418095218-57111413d275/go.mod h1:7d6SF2mYI5ljglM2MnUTh1C38rPKBQUF2HXkoUKOoPs=
 github.com/gopistolet/smtp v0.0.0-20220206164535-7d177c8d6ca1 h1:qeAwGuByhT33NRXssJ5JQQJZXZ3H2rG6gQp1sNeGj9o=
