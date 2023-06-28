@@ -1,52 +1,34 @@
-GoPistolet
-==========
+# GoPistolet
 
 [![Build Status](https://travis-ci.org/gopistolet/gopistolet.svg?branch=master)](https://travis-ci.org/gopistolet/gopistolet)
 
 GoPistolet will be a production-ready, and easy to setup mailserver (MTA/MSA/IMAP).
 
-Status
-------
 
-Right now we have implemented the SMTP protocol [RFC 5321](https://tools.ietf.org/html/rfc5321) and the MTA part.
-The server listens on a socket and saves all incoming messages in a maildir.
+## Usage
 
-Screenshots of the maildir, openened with [Mutt](http://www.mutt.org):
+    go run cmd/gopistolet/*.go
 
-![maildir with mutt](https://denbeke.be/foto/GoPistolet_maildir.png)
-
-![maildir with mutt](https://denbeke.be/foto/GoPistolet_maildir2.png)
+It will seed the database with a user with `username` and `password` as username and password.
 
 
-Installing
-----------
+## Development
 
-Install GoPistolet:
+Navigate to the parent folder and execute the following commands so you don't have to do rewrite in the go mod file.
 
-    $ go get github.com/gopistolet/gopistolet
-
-You need the following packages (look in `.travis.yml` for an up-to-date list):
-
-    $ go get github.com/smartystreets/goconvey/convey
-    $ go get github.com/gopistolet/gospf
-    $ go get github.com/sloonz/go-maildir
-   
-    
-    
-Configuration
--------------
-
-Copy `config.sample.json` to `config.json` and edit the file if you want to change the defaults.
+go work init
+go work use smtp
+go work use imap-backend
 
 
-Acknowledgements
------------------
+
+## Acknowledgements
 
 * [GoConvey](https://github.com/smartystreets/goconvey)
 * [go-maildir](https://github.com/sloonz/go-maildir)
 
-Authors
--------
+
+## Authors
 
 Mathias Beke - [denbeke.be](http://denbeke.be)  
 Timo Truyts

@@ -12,3 +12,4 @@ require (
 )
 
 replace github.com/gopistolet/imap-backend v0.0.0-master => ../imap-backend
+replace github.com/gopistolet/smtp v0.0.0-master => ../smtp
