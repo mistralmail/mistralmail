@@ -80,10 +80,11 @@ func (config *Config) GenerateMTAConfig() *mta.Config {
 	}
 
 	return &mta.Config{
-		Hostname:  config.Hostname,
-		Ip:        host,
-		Port:      uint32(portInt),
-		Blacklist: nixspamBlacklist,
+		Hostname:    config.Hostname,
+		Ip:          host,
+		Port:        uint32(portInt),
+		Blacklist:   nixspamBlacklist,
+		DisableAuth: true,
 	}
 }
 
