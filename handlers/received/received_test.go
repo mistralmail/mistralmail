@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gopistolet/smtp/mta"
+	"github.com/gopistolet/smtp/server"
 	"github.com/gopistolet/smtp/smtp"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -16,7 +16,7 @@ func TestReceivedHandler(t *testing.T) {
 
 	Convey("Testing headerReceived() handler", t, func() {
 
-		c := mta.Config{
+		c := server.Config{
 			Hostname: "some.mail.server.example.com",
 			Ip:       "192.168.0.11",
 		}

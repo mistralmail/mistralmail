@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gopistolet/smtp/mta"
+	"github.com/gopistolet/smtp/server"
 	"github.com/gopistolet/smtp/smtp"
 	log "github.com/sirupsen/logrus"
 )
 
-func New(c *mta.Config) *Received {
+func New(c *server.Config) *Received {
 	return &Received{
 		config: c,
 	}
 }
 
 type Received struct {
-	config *mta.Config
+	config *server.Config
 }
 
 func (handler *Received) Handle(state *smtp.State) error {

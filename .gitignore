@@ -4,3 +4,4 @@ maildir
 !handlers/maildir
 .DS_Store
 test.db
+mail_msa.txt

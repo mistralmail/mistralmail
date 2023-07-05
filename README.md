@@ -9,7 +9,7 @@ GoPistolet will be a production-ready, and easy to setup mailserver (MTA/MSA/IMA
 
     go run cmd/gopistolet/*.go
 
-It will seed the database with a user with `username` and `password` as username and password.
+It will seed the database with a user with `username@example.com` and `password` as username and password.
 
 
 ## Development

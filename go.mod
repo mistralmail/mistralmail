@@ -8,5 +8,7 @@ require (
 	github.com/gopistolet/smtp v0.0.0-20220206164535-7d177c8d6ca1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/smartystreets/goconvey v1.6.4
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/mail.v2 v2.3.1 // indirect
 
 )

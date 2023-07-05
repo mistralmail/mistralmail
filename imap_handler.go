@@ -2,12 +2,12 @@ package gopistolet
 
 import (
 	imapbackend "github.com/gopistolet/imap-backend"
-	"github.com/gopistolet/smtp/mta"
+	"github.com/gopistolet/smtp/server"
 	"github.com/gopistolet/smtp/smtp"
 )
 
 // NewIMAPHandler creates a new IMAP Handler
-func NewIMAPHandler(c *mta.Config) *ImapHandler {
+func NewIMAPHandler(c *server.Config) *ImapHandler {
 	return &ImapHandler{
 		config: c,
 	}
@@ -15,7 +15,7 @@ func NewIMAPHandler(c *mta.Config) *ImapHandler {
 
 // ImapHandler is an SMTP handler implementation that will write mails to the IMAP backend
 type ImapHandler struct {
-	config *mta.Config
+	config *server.Config
 }
 
 // Handle implements the SMTP Handle interface method.

@@ -6,19 +6,19 @@ import (
 
 	"github.com/gopistolet/gospf"
 	"github.com/gopistolet/gospf/dns"
-	"github.com/gopistolet/smtp/mta"
+	"github.com/gopistolet/smtp/server"
 	"github.com/gopistolet/smtp/smtp"
 	log "github.com/sirupsen/logrus"
 )
 
-func New(c *mta.Config) *Spf {
+func New(c *server.Config) *Spf {
 	return &Spf{
 		config: c,
 	}
 }
 
 type Spf struct {
-	config *mta.Config
+	config *server.Config
 }
 
 func (handler *Spf) Handle(state *smtp.State) error {
