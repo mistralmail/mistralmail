@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/gopistolet/gopistolet/helpers"
-	imapbackend "github.com/gopistolet/imap-backend"
+	"github.com/gopistolet/imap"
 	"github.com/gopistolet/smtp/server"
 	log "github.com/sirupsen/logrus"
 )
@@ -178,8 +178,8 @@ func (config *Config) GenerateMSAConfig() *server.Config {
 }
 
 // GenerateIMAPBackendConfig generates the config object for the IMAP backend
-func (config *Config) GenerateIMAPBackendConfig() *imapbackend.Config {
-	return &imapbackend.Config{
+func (config *Config) GenerateIMAPBackendConfig() *imap.Config {
+	return &imap.Config{
 		IMAPAddress: config.IMAPAddress,
 		DatabaseURL: config.DatabaseURL,
 		SeedDB:      config.SeedDB,

@@ -1,9 +1,9 @@
 HELO sender.example.org
 MAIL FROM:<test@localhost>
-RCPT TO:username@localhost
+RCPT TO:username@example.com
 DATA
 From: contact@example.org
-To: username@localhost
+To: username@example.com
 Subject: GoPistolet Test
 Date: Wed, 11 May 2016 14:31:59 +0000
 Content-Type: text/plain

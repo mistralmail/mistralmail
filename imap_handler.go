@@ -1,21 +1,23 @@
 package gopistolet
 
 import (
-	imapbackend "github.com/gopistolet/imap-backend"
+	imapbackend "github.com/gopistolet/gopistolet/backend/imap"
 	"github.com/gopistolet/smtp/server"
 	"github.com/gopistolet/smtp/smtp"
 )
 
 // NewIMAPHandler creates a new IMAP Handler
-func NewIMAPHandler(c *server.Config) *ImapHandler {
+func NewIMAPHandler(c *server.Config, imapbackend *imapbackend.IMAPBackend) *ImapHandler {
 	return &ImapHandler{
-		config: c,
+		config:      c,
+		imapbackend: imapbackend,
 	}
 }
 
 // ImapHandler is an SMTP handler implementation that will write mails to the IMAP backend
 type ImapHandler struct {
-	config *server.Config
+	config      *server.Config
+	imapbackend *imapbackend.IMAPBackend
 }
 
 // Handle implements the SMTP Handle interface method.
@@ -25,7 +27,7 @@ func (handler *ImapHandler) Handle(state *smtp.State) error {
 
 	// Check whether the recipients are known to the IMAP backend
 	for _, recipient := range state.To {
-		recipientExists, err := imapbackend.MailaddressExists(recipient.GetAddress())
+		recipientExists, err := handler.imapbackend.MailaddressExists(recipient.GetAddress())
 		if err != nil {
 			return err
 		}
@@ -36,7 +38,7 @@ func (handler *ImapHandler) Handle(state *smtp.State) error {
 	}
 
 	// Add mail in the backend
-	_, err := imapbackend.AddMail(state)
+	_, err := handler.imapbackend.AddMail(state)
 	if err != nil {
 		return err
 	}
