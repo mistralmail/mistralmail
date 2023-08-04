@@ -4,7 +4,7 @@ import (
 	"github.com/emersion/go-imap/backend"
 )
 
-var test backend.User = &User{}
+var test backend.User = &IMAPUser{}
 
 /*
 

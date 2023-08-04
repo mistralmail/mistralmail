@@ -6,14 +6,16 @@ import (
 
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/backend"
+	"github.com/gopistolet/gopistolet/backend/models"
 	"gorm.io/gorm"
 
 	log "github.com/sirupsen/logrus"
 )
 
 type IMAPBackend struct {
-	DB    *gorm.DB
-	users map[string]*User
+	userRepo    *models.UserRepository
+	mailboxRepo *models.MailboxRepository
+	messageRepo *models.MessageRepository
 }
 
 func NewIMAPBackend(db *gorm.DB) (*IMAPBackend, error) {
@@ -52,25 +54,51 @@ func NewIMAPBackend(db *gorm.DB) (*IMAPBackend, error) {
 		}, nil
 
 	*/
+
+	userRepo, err := models.NewUserRepository(db)
+	if err != nil {
+		return nil, err
+	}
+
+	mailboxRepo, err := models.NewMailboxRepository(db)
+	if err != nil {
+		return nil, err
+	}
+
+	messageRepo, err := models.NewMessageRepository(db)
+	if err != nil {
+		return nil, err
+	}
+
 	return &IMAPBackend{
-		DB: db,
+		userRepo:    userRepo,
+		mailboxRepo: mailboxRepo,
+		messageRepo: messageRepo,
 	}, nil
 }
 
-func (b *IMAPBackend) Login(connInfo *imap.ConnInfo, username string, password string) (backend.User, error) {
+func (b *IMAPBackend) Login(connInfo *imap.ConnInfo, email string, password string) (backend.User, error) {
 
-	log.WithField("remote-address", connInfo.RemoteAddr).Println("login")
+	log.WithField("remote-address", connInfo.RemoteAddr).Println("IMAP login")
 
-	user := &User{db: b.DB}
-
-	result := b.DB.Where(&User{Username_: username}).First(user)
-	if result.RowsAffected != 1 {
+	user, err := b.userRepo.FindUserByEmail(email)
+	if err != nil {
 		return nil, fmt.Errorf("bad username or password")
 	}
 
 	if user.Password == password {
-		return user, nil
+		u := b.wrapUser(user)
+		return &u, nil
 	}
 
 	return nil, errors.New("bad username or password")
+}
+
+// wrapUser creates a new IMAPUser that contains the User and all repos.
+func (b *IMAPBackend) wrapUser(user *models.User) IMAPUser {
+	return IMAPUser{
+		user:        user,
+		mailboxRepo: b.mailboxRepo,
+		messageRepo: b.messageRepo,
+	}
 }

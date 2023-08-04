@@ -4,29 +4,24 @@ import (
 	"fmt"
 
 	"github.com/emersion/go-imap/backend"
-	"gorm.io/gorm"
+	"github.com/gopistolet/gopistolet/backend/models"
 )
 
-type User struct {
-	gorm.Model
-	db *gorm.DB
-
-	ID        uint   `gorm:"primary_key;auto_increment;not_null"`
-	Username_ string `gorm:"column:username;unique"`
-	Password  string
-	Email     string `gorm:"unique"`
-	//mailboxes map[string]*Mailbox
+// IMAPUser implements the emersion/go-imap User interface.
+// it wraps our own user and repository into a struct.
+type IMAPUser struct {
+	user        *models.User
+	mailboxRepo *models.MailboxRepository
+	messageRepo *models.MessageRepository
 }
 
-func (u *User) Username() string {
-	return u.Username_
+func (u *IMAPUser) Username() string {
+	return u.user.Username_
 }
 
-func (u *User) ListMailboxes(subscribed bool) ([]backend.Mailbox, error) {
+func (u *IMAPUser) ListMailboxes(subscribed bool) ([]backend.Mailbox, error) {
 
-	mailboxes := []Mailbox{}
-
-	err := u.db.Where(Mailbox{UserID: u.ID}).Find(&mailboxes).Error
+	mailboxes, err := u.mailboxRepo.FindMailboxesByUserID(u.user.ID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get mailboxes: %v", err)
 	}
@@ -43,18 +38,16 @@ func (u *User) ListMailboxes(subscribed bool) ([]backend.Mailbox, error) {
 
 	mailboxesInterface := make([]backend.Mailbox, len(mailboxes))
 	for i, mailbox := range mailboxes {
-		mailbox.db = u.db
-		mailboxesInterface[i] = &mailbox
+		mb := u.wrapMailbox(mailbox)
+		mailboxesInterface[i] = &mb
 	}
 
 	return mailboxesInterface, nil
 }
 
-func (u *User) GetMailbox(name string) (backend.Mailbox, error) {
+func (u *IMAPUser) GetMailbox(name string) (backend.Mailbox, error) {
 
-	mailbox := Mailbox{db: u.db}
-
-	err := u.db.Where(&Mailbox{Name_: name, UserID: u.ID}).First(&mailbox).Error
+	mailbox, err := u.mailboxRepo.GetMailBoxByUserIDAndMailboxName(u.user.ID, name)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get mailbox: %w", err)
 	}
@@ -66,10 +59,12 @@ func (u *User) GetMailbox(name string) (backend.Mailbox, error) {
 		}
 	*/
 
-	return &mailbox, nil
+	mb := u.wrapMailbox(mailbox)
+
+	return &mb, nil
 }
 
-func (u *User) CreateMailbox(name string) error {
+func (u *IMAPUser) CreateMailbox(name string) error {
 
 	/*
 		if _, ok := u.mailboxes[name]; ok {
@@ -79,14 +74,14 @@ func (u *User) CreateMailbox(name string) error {
 		u.mailboxes[name] = &Mailbox{Name_: name, User: u}
 	*/
 
-	mailbox := &Mailbox{
-		db:     u.db,
-		Name_:  name,
-		User:   u,
-		UserID: u.ID,
+	mailbox := &models.Mailbox{
+		Name_: name,
+		//User:   u,
+		// TODO: fixme
+		UserID: u.user.ID,
 	}
 
-	err := u.db.Create(mailbox).Error
+	err := u.mailboxRepo.CreateMailbox(mailbox)
 	if err != nil {
 		return fmt.Errorf("couldn't create mailbox: %v", err)
 	}
@@ -94,7 +89,7 @@ func (u *User) CreateMailbox(name string) error {
 	return nil
 }
 
-func (u *User) DeleteMailbox(name string) error {
+func (u *IMAPUser) DeleteMailbox(name string) error {
 	/*
 		if name == "INBOX" {
 			return errors.New("Cannot delete INBOX")
@@ -110,13 +105,12 @@ func (u *User) DeleteMailbox(name string) error {
 		return fmt.Errorf("Cannot delete INBOX")
 	}
 
-	mailbox := &Mailbox{}
-	err := u.db.Where(Mailbox{UserID: u.ID}).Where(&Mailbox{Name_: name}).Find(&mailbox).Error
+	_, err := u.mailboxRepo.GetMailBoxByUserIDAndMailboxName(u.user.ID, name)
 	if err != nil {
-		err = fmt.Errorf("mailbox does not exist: %v", err)
+		err = fmt.Errorf("couldn't find mailbox: %v", err)
 	}
 
-	err = u.db.Delete(mailbox).Error
+	err = u.mailboxRepo.DeleteMailboxByUserIDAndMailboxName(u.user.ID, name)
 	if err != nil {
 		err = fmt.Errorf("couldn't delete mailbox: %v", err)
 	}
@@ -124,7 +118,7 @@ func (u *User) DeleteMailbox(name string) error {
 	return nil
 }
 
-func (u *User) RenameMailbox(existingName, newName string) error {
+func (u *IMAPUser) RenameMailbox(existingName, newName string) error {
 
 	/*
 		mbox, ok := u.mailboxes[existingName]
@@ -144,14 +138,13 @@ func (u *User) RenameMailbox(existingName, newName string) error {
 			delete(u.mailboxes, existingName)
 		}
 	*/
-	mailbox := &Mailbox{}
-	err := u.db.Where(Mailbox{UserID: u.ID}).Where(&Mailbox{Name_: existingName}).Find(&mailbox).Error
+	mailbox, err := u.mailboxRepo.GetMailBoxByUserIDAndMailboxName(u.user.ID, existingName)
 	if err != nil {
 		err = fmt.Errorf("mailbox does not exist: %v", err)
 	}
 
 	mailbox.Name_ = newName
-	err = u.db.Save(mailbox).Error
+	err = u.mailboxRepo.UpdateMailbox(mailbox)
 	if err != nil {
 		err = fmt.Errorf("couldn't rename mailbox: %v", err)
 	}
@@ -159,6 +152,15 @@ func (u *User) RenameMailbox(existingName, newName string) error {
 	return nil
 }
 
-func (u *User) Logout() error {
+func (u *IMAPUser) Logout() error {
 	return nil
+}
+
+// wrapMailbox creates a new IMAMailbox that contains the Mailbox and all repos.
+func (u *IMAPUser) wrapMailbox(mailbox *models.Mailbox) IMAPMailbox {
+	return IMAPMailbox{
+		mailbox:     mailbox,
+		mailboxRepo: u.mailboxRepo,
+		messageRepo: u.messageRepo,
+	}
 }

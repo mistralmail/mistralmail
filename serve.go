@@ -5,6 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/gopistolet/gopistolet/backend"
 	imapbackend "github.com/gopistolet/gopistolet/backend/imap"
 	smtpbackend "github.com/gopistolet/gopistolet/backend/smtp"
 	"github.com/gopistolet/gopistolet/handlers"
@@ -27,10 +28,11 @@ func Serve(config *Config) {
 	log.Println("GoPistolet at your service!")
 
 	// Create backends
-	db, err := imap.InitDB(config.DatabaseURL)
+	db, err := backend.InitDB(config.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Couldn't connect to database: %v", err)
 	}
+	defer backend.CloseDB(db)
 
 	imapBackend, err := imapbackend.NewIMAPBackend(db)
 	if err != nil {
@@ -92,5 +94,4 @@ func Serve(config *Config) {
 		log.Errorln(err)
 	}
 
-	// TODO close database
 }

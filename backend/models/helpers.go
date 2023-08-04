@@ -1,4 +1,4 @@
-package imapbackend
+package models
 
 import (
 	"database/sql/driver"

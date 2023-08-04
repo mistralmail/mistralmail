@@ -4,40 +4,29 @@ import (
 	"bufio"
 	"bytes"
 	"io"
-	"time"
 
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/backend/backendutil"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-message/textproto"
-	"gorm.io/gorm"
+	"github.com/gopistolet/gopistolet/backend/models"
 )
 
-type Message struct {
-	gorm.Model
-
-	UID   uint32
-	Date  time.Time
-	Size  uint32
-	Flags StringSlice
-	Body  []byte
-
-	//Seen bool `gorm:"default:false"`
-
-	MailboxID uint `gorm:"foreignKey:Mailbox"`
+type IMAPMessage struct {
+	message *models.Message
 }
 
-func (m *Message) entity() (*message.Entity, error) {
-	return message.Read(bytes.NewReader(m.Body))
+func (m *IMAPMessage) entity() (*message.Entity, error) {
+	return message.Read(bytes.NewReader(m.message.Body))
 }
 
-func (m *Message) headerAndBody() (textproto.Header, io.Reader, error) {
-	body := bufio.NewReader(bytes.NewReader(m.Body))
+func (m *IMAPMessage) headerAndBody() (textproto.Header, io.Reader, error) {
+	body := bufio.NewReader(bytes.NewReader(m.message.Body))
 	hdr, err := textproto.ReadHeader(body)
 	return hdr, body, err
 }
 
-func (m *Message) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, error) {
+func (m *IMAPMessage) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, error) {
 	fetched := imap.NewMessage(seqNum, items)
 	for _, item := range items {
 		switch item {
@@ -48,20 +37,20 @@ func (m *Message) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, e
 			hdr, body, _ := m.headerAndBody()
 			fetched.BodyStructure, _ = backendutil.FetchBodyStructure(hdr, body, item == imap.FetchBodyStructure)
 		case imap.FetchFlags:
-			fetched.Flags = m.Flags
+			fetched.Flags = m.message.Flags
 		case imap.FetchInternalDate:
-			fetched.InternalDate = m.Date
+			fetched.InternalDate = m.message.Date
 		case imap.FetchRFC822Size:
-			fetched.Size = m.Size
+			fetched.Size = m.message.Size
 		case imap.FetchUid:
-			fetched.Uid = m.UID
+			fetched.Uid = uint32(m.message.ID)
 		default:
 			section, err := imap.ParseBodySectionName(item)
 			if err != nil {
 				break
 			}
 
-			body := bufio.NewReader(bytes.NewReader(m.Body))
+			body := bufio.NewReader(bytes.NewReader(m.message.Body))
 			hdr, err := textproto.ReadHeader(body)
 			if err != nil {
 				return nil, err
@@ -75,7 +64,7 @@ func (m *Message) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Message, e
 	return fetched, nil
 }
 
-func (m *Message) Match(seqNum uint32, c *imap.SearchCriteria) (bool, error) {
+func (m *IMAPMessage) Match(seqNum uint32, c *imap.SearchCriteria) (bool, error) {
 	e, _ := m.entity()
-	return backendutil.Match(e, seqNum, m.UID, m.Date, m.Flags, c)
+	return backendutil.Match(e, seqNum, uint32(m.message.ID), m.message.Date, m.message.Flags, c)
 }

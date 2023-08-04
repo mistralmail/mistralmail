@@ -1,57 +1,44 @@
 package imapbackend
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"time"
 
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/backend/backendutil"
+	"github.com/gopistolet/gopistolet/backend/models"
 	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
 )
 
 var Delimiter = "/"
 
-type Mailbox struct {
-	gorm.Model
-	db *gorm.DB
-
-	ID uint `gorm:"primary_key;auto_increment;not_null"`
-
-	Subscribed bool
-	//Messages   []*Message `gorm:"-"`
-
-	Name_  string `gorm:"column:name;unique"`
-	UserID uint   `gorm:"foreignKey:User"`
-	User   *User
+type IMAPMailbox struct {
+	mailbox     *models.Mailbox
+	messageRepo *models.MessageRepository
+	mailboxRepo *models.MailboxRepository
 }
 
-func (mbox *Mailbox) Name() string {
-	return mbox.Name_
+func (mbox *IMAPMailbox) Name() string {
+	return mbox.mailbox.Name_
 }
 
-func (mbox *Mailbox) Info() (*imap.MailboxInfo, error) {
+func (mbox *IMAPMailbox) Info() (*imap.MailboxInfo, error) {
 
 	log.Debugln("Info")
 
 	info := &imap.MailboxInfo{
 		Delimiter: Delimiter,
-		Name:      mbox.Name_,
+		Name:      mbox.mailbox.Name_,
 	}
 	return info, nil
 }
 
-func (mbox *Mailbox) uidNext() uint32 {
+func (mbox *IMAPMailbox) uidNext() uint {
 
-	message := &Message{}
-	err := mbox.db.Order("uid desc").First(&message).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return 1
-	}
+	nextUID, err := mbox.messageRepo.GetNextMessageID(mbox.mailbox.ID)
 	if err != nil {
-		// TODO handle error?
+		// TODO how to handle error?
 		log.Fatalf("couldn't find next uid: %v", err)
 	}
 
@@ -66,10 +53,10 @@ func (mbox *Mailbox) uidNext() uint32 {
 		return uid
 	*/
 
-	return message.UID + 1
+	return nextUID
 }
 
-func (mbox *Mailbox) flags() []string {
+func (mbox *IMAPMailbox) flags() []string {
 	/*
 		flagsMap := make(map[string]bool)
 		for _, msg := range mbox.Messages {
@@ -88,8 +75,7 @@ func (mbox *Mailbox) flags() []string {
 	*/
 
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages := []Message{}
-	err := mbox.db.Where(Message{MailboxID: mbox.ID}).Find(&messages).Error
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
 	if err != nil {
 		// TODO handle error
 		log.Fatalf("couldn't get messages: %v", err)
@@ -112,11 +98,10 @@ func (mbox *Mailbox) flags() []string {
 
 }
 
-func (mbox *Mailbox) unseenSeqNum() uint32 {
+func (mbox *IMAPMailbox) unseenSeqNum() uint32 {
 
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages := []Message{}
-	err := mbox.db.Where(Message{MailboxID: mbox.ID}).Find(&messages).Error
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
 	if err != nil {
 		// TODO handle error
 		log.Fatalf("couldn't get messages: %v", err)
@@ -140,14 +125,16 @@ func (mbox *Mailbox) unseenSeqNum() uint32 {
 	return 0
 }
 
-func (mbox *Mailbox) Status(items []imap.StatusItem) (*imap.MailboxStatus, error) {
+func (mbox *IMAPMailbox) Status(items []imap.StatusItem) (*imap.MailboxStatus, error) {
 
 	log.Debugln("Status")
 
-	var count int64
-	mbox.db.Model(&Message{}).Where(Message{MailboxID: mbox.ID}).Count(&count)
+	count, err := mbox.messageRepo.GetNumberOfMessagesByMailboxID(mbox.mailbox.ID)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get status: %w", err)
+	}
 
-	status := imap.NewMailboxStatus(mbox.Name_, items)
+	status := imap.NewMailboxStatus(mbox.mailbox.Name_, items)
 	status.Flags = mbox.flags()
 	status.PermanentFlags = []string{`\Seen`, `\Answered`, `\Flagged`, `\Draft`, `\Deleted`, `\*`}
 	status.UnseenSeqNum = mbox.unseenSeqNum()
@@ -157,7 +144,7 @@ func (mbox *Mailbox) Status(items []imap.StatusItem) (*imap.MailboxStatus, error
 		case imap.StatusMessages:
 			status.Messages = uint32(count)
 		case imap.StatusUidNext:
-			status.UidNext = mbox.uidNext()
+			status.UidNext = uint32(mbox.uidNext())
 		case imap.StatusUidValidity:
 			status.UidValidity = 1
 		case imap.StatusRecent:
@@ -170,12 +157,12 @@ func (mbox *Mailbox) Status(items []imap.StatusItem) (*imap.MailboxStatus, error
 	return status, nil
 }
 
-func (mbox *Mailbox) SetSubscribed(subscribed bool) error {
+func (mbox *IMAPMailbox) SetSubscribed(subscribed bool) error {
 	log.Debugln("SetSubscribed")
 	// TODO
-	mbox.Subscribed = subscribed
+	mbox.mailbox.Subscribed = subscribed
 
-	err := mbox.db.Save(mbox).Error
+	err := mbox.mailboxRepo.UpdateMailbox(mbox.mailbox)
 	if err != nil {
 		return fmt.Errorf("couldn't set subscribed: %v", err)
 	}
@@ -183,12 +170,13 @@ func (mbox *Mailbox) SetSubscribed(subscribed bool) error {
 	return nil
 }
 
-func (mbox *Mailbox) Check() error {
+func (mbox *IMAPMailbox) Check() error {
 	log.Debugln("Check")
+	// TODO ?
 	return nil
 }
 
-func (mbox *Mailbox) ListMessages(uid bool, seqSet *imap.SeqSet, items []imap.FetchItem, ch chan<- *imap.Message) error {
+func (mbox *IMAPMailbox) ListMessages(uid bool, seqSet *imap.SeqSet, items []imap.FetchItem, ch chan<- *imap.Message) error {
 	defer close(ch)
 
 	log.Debugln("ListMessages")
@@ -217,18 +205,22 @@ func (mbox *Mailbox) ListMessages(uid bool, seqSet *imap.SeqSet, items []imap.Fe
 	*/
 
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages := []Message{}
-	err := mbox.db.Where(Message{MailboxID: mbox.ID}).Find(&messages).Error
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
 	if err != nil {
 		return fmt.Errorf("couldn't get messages: %v", err)
 	}
 
-	for i, msg := range messages {
+	for i, message := range messages {
+
+		msg := IMAPMessage{
+			message: message,
+		}
+
 		seqNum := uint32(i + 1)
 
 		var id uint32
 		if uid {
-			id = msg.UID
+			id = uint32(msg.message.ID)
 		} else {
 			id = seqNum
 		}
@@ -247,7 +239,7 @@ func (mbox *Mailbox) ListMessages(uid bool, seqSet *imap.SeqSet, items []imap.Fe
 	return nil
 }
 
-func (mbox *Mailbox) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]uint32, error) {
+func (mbox *IMAPMailbox) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]uint32, error) {
 
 	log.Debugln("SearchMessages")
 
@@ -273,13 +265,17 @@ func (mbox *Mailbox) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]
 	*/
 
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages := []Message{}
-	err := mbox.db.Where(Message{MailboxID: mbox.ID}).Find(&messages).Error
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't search messages: %v", err)
 	}
 	var ids []uint32
-	for i, msg := range messages {
+	for i, message := range messages {
+
+		msg := IMAPMessage{
+			message: message,
+		}
+
 		seqNum := uint32(i + 1)
 
 		ok, err := msg.Match(seqNum, criteria)
@@ -289,7 +285,7 @@ func (mbox *Mailbox) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]
 
 		var id uint32
 		if uid {
-			id = msg.UID
+			id = uint32(msg.message.ID)
 		} else {
 			id = seqNum
 		}
@@ -298,7 +294,7 @@ func (mbox *Mailbox) SearchMessages(uid bool, criteria *imap.SearchCriteria) ([]
 	return ids, nil
 }
 
-func (mbox *Mailbox) CreateMessage(flags []string, date time.Time, body imap.Literal) error {
+func (mbox *IMAPMailbox) CreateMessage(flags []string, date time.Time, body imap.Literal) error {
 
 	log.Debugln("CreateMessage")
 
@@ -321,17 +317,17 @@ func (mbox *Mailbox) CreateMessage(flags []string, date time.Time, body imap.Lit
 		})
 	*/
 
-	message := &Message{
-		UID:   mbox.uidNext(),
+	message := &models.Message{
+		ID:    mbox.uidNext(),
 		Date:  date,
 		Size:  uint32(len(b)),
 		Flags: flags,
 		Body:  b,
 
-		MailboxID: mbox.ID,
+		MailboxID: mbox.mailbox.ID,
 	}
 
-	err = mbox.db.Create(message).Error
+	err = mbox.messageRepo.CreateMessage(message)
 	if err != nil {
 		return fmt.Errorf("couldn't create message: %v", err)
 	}
@@ -339,7 +335,7 @@ func (mbox *Mailbox) CreateMessage(flags []string, date time.Time, body imap.Lit
 	return nil
 }
 
-func (mbox *Mailbox) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, op imap.FlagsOp, flags []string) error {
+func (mbox *IMAPMailbox) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, op imap.FlagsOp, flags []string) error {
 
 	log.Debugf("UpdateMessagesFlags() %+v", op)
 
@@ -360,15 +356,19 @@ func (mbox *Mailbox) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, op imap.
 	*/
 
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages := []Message{}
-	err := mbox.db.Where(Message{MailboxID: mbox.ID}).Find(&messages).Error
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
 	if err != nil {
 		return fmt.Errorf("couldn't update message flags: %v", err)
 	}
-	for i, msg := range messages {
+	for i, message := range messages {
+
+		msg := IMAPMessage{
+			message: message,
+		}
+
 		var id uint32
 		if uid {
-			id = msg.UID
+			id = uint32(msg.message.ID)
 		} else {
 			id = uint32(i + 1)
 		}
@@ -376,8 +376,8 @@ func (mbox *Mailbox) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, op imap.
 			continue
 		}
 
-		msg.Flags = backendutil.UpdateFlags(msg.Flags, op, flags)
-		err = mbox.db.Save(msg).Error
+		msg.message.Flags = backendutil.UpdateFlags(msg.message.Flags, op, flags)
+		err = mbox.messageRepo.UpdateMessage(msg.message)
 		if err != nil {
 			return fmt.Errorf("couldn't update message flags: %v", err)
 		}
@@ -386,7 +386,7 @@ func (mbox *Mailbox) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, op imap.
 	return nil
 }
 
-func (mbox *Mailbox) CopyMessages(uid bool, seqset *imap.SeqSet, destName string) error {
+func (mbox *IMAPMailbox) CopyMessages(uid bool, seqset *imap.SeqSet, destName string) error {
 
 	log.Debugln("CopyMessages")
 
@@ -412,25 +412,26 @@ func (mbox *Mailbox) CopyMessages(uid bool, seqset *imap.SeqSet, destName string
 			dest.Messages = append(dest.Messages, &msgCopy)
 		}
 	*/
-
-	dest := &Mailbox{}
-	err := mbox.db.Where(Mailbox{Name_: destName}).Find(&dest).Error
+	destMailbox, err := mbox.mailboxRepo.GetMailBoxByUserIDAndMailboxName(mbox.mailbox.UserID, destName)
 	if err != nil {
 		return fmt.Errorf("couldn't find destination mailbox: %v", err)
 	}
+	dest := IMAPMailbox{
+		mailbox:     destMailbox,
+		mailboxRepo: mbox.mailboxRepo,
+		messageRepo: mbox.messageRepo,
+	}
 
-	messages := []Message{}
-
-	err = mbox.db.Where(Message{MailboxID: mbox.ID}).Find(&messages).Error
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
 	if err != nil {
 		return fmt.Errorf("couldn't find messages: %v", err)
 	}
 
-	messagesToCopy := []Message{}
+	messagesToCopy := []*models.Message{}
 	for i, msg := range messages {
 		var id uint32
 		if uid {
-			id = msg.UID
+			id = uint32(msg.ID)
 		} else {
 			id = uint32(i + 1)
 		}
@@ -442,16 +443,16 @@ func (mbox *Mailbox) CopyMessages(uid bool, seqset *imap.SeqSet, destName string
 	}
 
 	for _, message := range messagesToCopy {
-		m := Message{
-			UID:   dest.uidNext(),
+		m := models.Message{
+			ID:    dest.uidNext(),
 			Date:  message.Date,
 			Size:  message.Size,
 			Flags: message.Flags,
 			Body:  message.Body,
 
-			MailboxID: dest.ID,
+			MailboxID: dest.mailbox.ID,
 		}
-		err = mbox.db.Create(&m).Error
+		err = mbox.messageRepo.CreateMessage(&m)
 		if err != nil {
 			return fmt.Errorf("couldn't copy messages: %v", err)
 		}
@@ -460,7 +461,7 @@ func (mbox *Mailbox) CopyMessages(uid bool, seqset *imap.SeqSet, destName string
 	return nil
 }
 
-func (mbox *Mailbox) Expunge() error {
+func (mbox *IMAPMailbox) Expunge() error {
 
 	log.Debugln("Expunge()")
 
@@ -483,10 +484,9 @@ func (mbox *Mailbox) Expunge() error {
 	*/
 
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages := []Message{}
-	err := mbox.db.Where(Message{MailboxID: mbox.ID}).Find(&messages).Error
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
 	if err != nil {
-		return fmt.Errorf("couldn't expunge messages: %v", err)
+		return fmt.Errorf("couldn't find messages: %v", err)
 	}
 
 	for i := len(messages) - 1; i >= 0; i-- {
@@ -501,7 +501,7 @@ func (mbox *Mailbox) Expunge() error {
 		}
 
 		if deleted {
-			mbox.db.Delete(&msg)
+			mbox.messageRepo.DeleteMessageByID(msg.ID)
 		}
 	}
 
