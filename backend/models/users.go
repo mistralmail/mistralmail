@@ -7,10 +7,10 @@ type User struct {
 	gorm.Model
 	DB *gorm.DB `gorm:"-"`
 
-	ID        uint   `gorm:"primary_key;auto_increment;not_null"`
-	Username_ string `gorm:"column:username;unique;not_null"`
-	Password  string `gorm:"not_null"`
-	Email     string `gorm:"unique;not_null"`
+	ID       uint   `gorm:"primary_key;auto_increment;not_null"`
+	Username string `gorm:"column:username;unique;not_null"`
+	Password string `gorm:"not_null"`
+	Email    string `gorm:"unique;not_null"`
 }
 
 // UserRepository implements the User repository

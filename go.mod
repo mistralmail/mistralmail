@@ -10,6 +10,7 @@ require (
 	github.com/gopistolet/smtp v0.0.0-20230801204956-1a31a444f233
 	github.com/sirupsen/logrus v1.8.1
 	github.com/smartystreets/goconvey v1.6.4
+	github.com/spf13/cobra v1.7.0
 	github.com/xo/dburl v0.9.0
 	gorm.io/driver/mysql v1.2.3
 	gorm.io/driver/postgres v1.2.3

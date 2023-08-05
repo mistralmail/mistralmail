@@ -11,8 +11,8 @@ type Mailbox struct {
 
 	Subscribed bool
 
-	Name_  string `gorm:"column:name;unique"`
-	UserID uint   `gorm:"foreignKey:User"`
+	Name   string `gorm:"index:idx_mailbox_user,unique"`
+	UserID uint   `gorm:"index:idx_mailbox_user,unique;foreignKey:User"`
 	User   *User
 }
 

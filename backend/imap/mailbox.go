@@ -20,7 +20,7 @@ type IMAPMailbox struct {
 }
 
 func (mbox *IMAPMailbox) Name() string {
-	return mbox.mailbox.Name_
+	return mbox.mailbox.Name
 }
 
 func (mbox *IMAPMailbox) Info() (*imap.MailboxInfo, error) {
@@ -29,7 +29,7 @@ func (mbox *IMAPMailbox) Info() (*imap.MailboxInfo, error) {
 
 	info := &imap.MailboxInfo{
 		Delimiter: Delimiter,
-		Name:      mbox.mailbox.Name_,
+		Name:      mbox.mailbox.Name,
 	}
 	return info, nil
 }
@@ -134,7 +134,7 @@ func (mbox *IMAPMailbox) Status(items []imap.StatusItem) (*imap.MailboxStatus, e
 		return nil, fmt.Errorf("couldn't get status: %w", err)
 	}
 
-	status := imap.NewMailboxStatus(mbox.mailbox.Name_, items)
+	status := imap.NewMailboxStatus(mbox.mailbox.Name, items)
 	status.Flags = mbox.flags()
 	status.PermanentFlags = []string{`\Seen`, `\Answered`, `\Flagged`, `\Draft`, `\Deleted`, `\*`}
 	status.UnseenSeqNum = mbox.unseenSeqNum()

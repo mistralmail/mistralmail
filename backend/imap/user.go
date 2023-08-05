@@ -16,7 +16,7 @@ type IMAPUser struct {
 }
 
 func (u *IMAPUser) Username() string {
-	return u.user.Username_
+	return u.user.Username
 }
 
 func (u *IMAPUser) ListMailboxes(subscribed bool) ([]backend.Mailbox, error) {
@@ -75,7 +75,7 @@ func (u *IMAPUser) CreateMailbox(name string) error {
 	*/
 
 	mailbox := &models.Mailbox{
-		Name_: name,
+		Name: name,
 		//User:   u,
 		// TODO: fixme
 		UserID: u.user.ID,
@@ -143,7 +143,7 @@ func (u *IMAPUser) RenameMailbox(existingName, newName string) error {
 		err = fmt.Errorf("mailbox does not exist: %v", err)
 	}
 
-	mailbox.Name_ = newName
+	mailbox.Name = newName
 	err = u.mailboxRepo.UpdateMailbox(mailbox)
 	if err != nil {
 		err = fmt.Errorf("couldn't rename mailbox: %v", err)

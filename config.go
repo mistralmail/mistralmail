@@ -45,7 +45,9 @@ func BuildConfigFromEnv() *Config {
 	port := getEnv("EXTERNAL_RELAY_PORT", "")
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
-		panic("TODO: return error here")
+		if port != "" {
+			panic("TODO: return error here")
+		}
 	}
 	config.ExternalRelayPort = portInt
 	config.ExternalRelayUsername = getEnv("EXTERNAL_RELAY_USERNAME", "")
