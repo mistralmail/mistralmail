@@ -1,4 +1,4 @@
-gopistolet
+cmd/gopistolet/gopistolet
 config.json
 maildir
 !handlers/maildir
