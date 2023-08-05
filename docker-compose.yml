@@ -1,0 +1,16 @@
+version: "3"
+
+services:
+  gopistolet:
+    build: 
+      context: .
+    container_name: gopistolet
+    environment:
+      - SMTP_OUTGOING_MODE=RELAY
+      - EXTERNAL_RELAY_HOSTNAME=${EXTERNAL_RELAY_HOSTNAME}
+      - EXTERNAL_RELAY_PORT=${EXTERNAL_RELAY_PORT}
+      - EXTERNAL_RELAY_INSECURE_SKIP_VERIFY=true
+    ports:
+      - "25:25"
+      - "587:587"
+      - "143:143"
