@@ -11,12 +11,12 @@ import (
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB
-
-// InitDB creates a new datastore with the given database connection string/url
+// initDB creates a new datastore with the given database connection string/url
 // e.g. postgres://user:pass@localhost/dbname
 // e.g. sqlite:/path/to/file.db
-func InitDB(dbURL string) (*gorm.DB, error) {
+func initDB(dbURL string) (*gorm.DB, error) {
+
+	var db *gorm.DB
 
 	u, err := dburl.Parse(dbURL)
 	if err != nil {
@@ -51,8 +51,8 @@ func InitDB(dbURL string) (*gorm.DB, error) {
 
 }
 
-// CloseDB closes the database connection
-func CloseDB(db *gorm.DB) error {
+// closeDB closes the database connection
+func closeDB(db *gorm.DB) error {
 	sqlDB, err := db.DB()
 	if err != nil {
 		return fmt.Errorf("couldn't get sql db: %w", err)

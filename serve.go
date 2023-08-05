@@ -6,8 +6,6 @@ import (
 	"syscall"
 
 	"github.com/gopistolet/gopistolet/backend"
-	imapbackend "github.com/gopistolet/gopistolet/backend/imap"
-	smtpbackend "github.com/gopistolet/gopistolet/backend/smtp"
 	"github.com/gopistolet/gopistolet/handlers"
 	"github.com/gopistolet/gopistolet/handlers/received"
 	"github.com/gopistolet/gopistolet/handlers/relay"
@@ -27,22 +25,17 @@ func Serve(config *Config) {
 
 	log.Println("GoPistolet at your service!")
 
-	// Create backends
-	db, err := backend.InitDB(config.DatabaseURL)
+	// Create backend
+	backend, err := backend.New(config.DatabaseURL)
 	if err != nil {
-		log.Fatalf("Couldn't connect to database: %v", err)
+		log.Fatalf("Couldn't create backend: %v", err)
 	}
-	defer backend.CloseDB(db)
-
-	imapBackend, err := imapbackend.NewIMAPBackend(db)
-	if err != nil {
-		log.Fatalf("Couldn't create IMAP backend: %v", err)
-	}
-
-	smtpBackend, err := smtpbackend.NewSMTPBackend(db)
-	if err != nil {
-		log.Fatalf("Couldn't create SMTP backend: %v", err)
-	}
+	defer func() {
+		err := backend.Close()
+		if err != nil {
+			log.Errorf("Couldn't close backend: %v", err)
+		}
+	}()
 
 	// Run SMTP MSA
 	go func() {
@@ -56,7 +49,7 @@ func Serve(config *Config) {
 		}
 
 		msa := server.NewDefault(*msaConfig, msaHandlerChain)
-		msa.Server.AuthBackend = smtpBackend
+		msa.Server.AuthBackend = backend.SMTPBackend
 
 		go func() {
 			<-sigc
@@ -70,7 +63,7 @@ func Serve(config *Config) {
 
 	// Run IMAP
 	go func() {
-		imap.Serve(config.GenerateIMAPBackendConfig(), imapBackend)
+		imap.Serve(config.GenerateIMAPBackendConfig(), backend.IMAPBackend)
 	}()
 
 	// Run SMTP MTA
@@ -80,7 +73,7 @@ func Serve(config *Config) {
 		Handlers: []handlers.Handler{
 			received.New(mtaConfig),
 			spf.New(mtaConfig),
-			NewIMAPHandler(mtaConfig, imapBackend),
+			NewIMAPHandler(mtaConfig, backend.IMAPBackend),
 		},
 	}
 

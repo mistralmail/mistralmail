@@ -3,7 +3,6 @@ package smtpbackend
 import (
 	"github.com/gopistolet/gopistolet/backend/models"
 	"github.com/gopistolet/smtp/server"
-	"gorm.io/gorm"
 )
 
 // SMTPUser denotes an authenticated SMTP user.
@@ -23,13 +22,7 @@ type SMTPBackend struct {
 }
 
 // NewSMTPBackend creates a new SMTPBackend.
-func NewSMTPBackend(db *gorm.DB) (*SMTPBackend, error) {
-
-	userRepo, err := models.NewUserRepository(db)
-	if err != nil {
-		return nil, err
-	}
-
+func NewSMTPBackend(userRepo *models.UserRepository) (*SMTPBackend, error) {
 	return &SMTPBackend{
 		userRepo: userRepo,
 	}, nil

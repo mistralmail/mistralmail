@@ -7,7 +7,6 @@ import (
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/backend"
 	"github.com/gopistolet/gopistolet/backend/models"
-	"gorm.io/gorm"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -18,7 +17,7 @@ type IMAPBackend struct {
 	messageRepo *models.MessageRepository
 }
 
-func NewIMAPBackend(db *gorm.DB) (*IMAPBackend, error) {
+func NewIMAPBackend(userRepo *models.UserRepository, mailboxRepo *models.MailboxRepository, messageRepo *models.MessageRepository) (*IMAPBackend, error) {
 
 	/*
 
@@ -54,21 +53,6 @@ func NewIMAPBackend(db *gorm.DB) (*IMAPBackend, error) {
 		}, nil
 
 	*/
-
-	userRepo, err := models.NewUserRepository(db)
-	if err != nil {
-		return nil, err
-	}
-
-	mailboxRepo, err := models.NewMailboxRepository(db)
-	if err != nil {
-		return nil, err
-	}
-
-	messageRepo, err := models.NewMessageRepository(db)
-	if err != nil {
-		return nil, err
-	}
 
 	return &IMAPBackend{
 		userRepo:    userRepo,
