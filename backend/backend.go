@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	imapbackend "github.com/gopistolet/gopistolet/backend/imap"
+	loginattempts "github.com/gopistolet/gopistolet/backend/login-attempts"
 	"github.com/gopistolet/gopistolet/backend/models"
 	smtpbackend "github.com/gopistolet/gopistolet/backend/smtp"
 	"gorm.io/gorm"
@@ -16,8 +17,10 @@ type Backend struct {
 	mailboxRepo *models.MailboxRepository
 	messageRepo *models.MessageRepository
 
-	SMTPBackend *smtpbackend.SMTPBackend // TODO: use these
-	IMAPBackend *imapbackend.IMAPBackend // TODO: use these
+	SMTPBackend *smtpbackend.SMTPBackend
+	IMAPBackend *imapbackend.IMAPBackend
+
+	loginattempts *loginattempts.LoginAttempts
 }
 
 // New creates a new backend with the provided database url.
@@ -43,23 +46,29 @@ func New(dbURL string) (*Backend, error) {
 		return nil, fmt.Errorf("couldn't create message repo: %w", err)
 	}
 
-	imapBackend, err := imapbackend.NewIMAPBackend(userRepo, mailboxRepo, messageRepo)
+	loginAttempts, err := loginattempts.New(loginattempts.DefaultMaxAttempts)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create login attempts service: %w", err)
+	}
+
+	imapBackend, err := imapbackend.NewIMAPBackend(userRepo, mailboxRepo, messageRepo, loginAttempts)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create IMAP backend: %w", err)
 	}
 
-	smtpBackend, err := smtpbackend.NewSMTPBackend(userRepo)
+	smtpBackend, err := smtpbackend.NewSMTPBackend(userRepo, loginAttempts)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create SMTP backend: %w", err)
 	}
 
 	return &Backend{
-		db:          db,
-		userRepo:    userRepo,
-		mailboxRepo: mailboxRepo,
-		messageRepo: messageRepo,
-		IMAPBackend: imapBackend,
-		SMTPBackend: smtpBackend,
+		db:            db,
+		userRepo:      userRepo,
+		mailboxRepo:   mailboxRepo,
+		messageRepo:   messageRepo,
+		IMAPBackend:   imapBackend,
+		SMTPBackend:   smtpBackend,
+		loginattempts: loginAttempts,
 	}, nil
 }
 
