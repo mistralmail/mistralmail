@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/gopistolet/gopistolet/backend"
+	"github.com/gopistolet/gopistolet/backend/services/certificates"
 	"github.com/gopistolet/gopistolet/handlers"
 	"github.com/gopistolet/gopistolet/handlers/received"
 	"github.com/gopistolet/gopistolet/handlers/relay"
@@ -37,9 +38,21 @@ func Serve(config *Config) {
 		}
 	}()
 
+	// Create certificates store
+	certificates, err := certificates.NewCertificateService(config.TLSCertificatesDirectory, config.AcmeEndpoint, config.AcmeEmail)
+	if err != nil {
+		log.Fatalf("Couldn't create certificate service: %v", err)
+	}
+	cert, err := certificates.GetOrCreateCertificate(config.Hostname)
+	if err != nil {
+		log.Fatalf("Couldn't create certificate: %v", err)
+	}
+
 	// Run SMTP MSA
 	go func() {
 		msaConfig := config.GenerateMSAConfig()
+		msaConfig.TlsCert = cert.CertificateFile
+		msaConfig.TlsKey = cert.PrivateKeyFile
 
 		msaHandlerChain := &handlers.HandlerMachanism{
 			Handlers: []handlers.Handler{
@@ -63,7 +76,11 @@ func Serve(config *Config) {
 
 	// Run IMAP
 	go func() {
-		imap.Serve(config.GenerateIMAPBackendConfig(), backend.IMAPBackend)
+		imapConfig := config.GenerateIMAPBackendConfig()
+		imapConfig.TlsCert = cert.CertificateFile
+		imapConfig.TlsKey = cert.PrivateKeyFile
+
+		imap.Serve(imapConfig, backend.IMAPBackend)
 	}()
 
 	// Run SMTP MTA

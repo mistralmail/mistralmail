@@ -14,3 +14,12 @@ services:
       - "25:25"
       - "587:587"
       - "143:143"
+
+  pebble:
+    # for testing ACME challenges
+    image: letsencrypt/pebble
+    ports:
+      - 14000:14000  # ACME port
+      - 15000:15000  # Management port
+    environment:
+      - PEBBLE_VA_NOSLEEP=1

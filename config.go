@@ -14,14 +14,16 @@ import (
 )
 
 var (
-	defaultSMTPPortIncoming    = 25
-	defaultSMTPAddressIncoming = fmt.Sprintf(":%d", defaultSMTPPortIncoming)
-	defaultSMTPPortOutgoing    = 587
-	defaultSMTPAddressOutgoing = fmt.Sprintf(":%d", defaultSMTPPortOutgoing)
-	defaultIMAPPort            = 143
-	defaultIMAPAddress         = fmt.Sprintf(":%d", defaultIMAPPort)
-	defaultDatabaseURL         = "sqlite:test.db"
-	defaultSeedDB              = false
+	defaultSMTPPortIncoming      = 25
+	defaultSMTPAddressIncoming   = fmt.Sprintf(":%d", defaultSMTPPortIncoming)
+	defaultSMTPPortOutgoing      = 587
+	defaultSMTPAddressOutgoing   = fmt.Sprintf(":%d", defaultSMTPPortOutgoing)
+	defaultIMAPPort              = 143
+	defaultIMAPAddress           = fmt.Sprintf(":%d", defaultIMAPPort)
+	defaultDatabaseURL           = "sqlite:test.db"
+	defaultSeedDB                = false
+	defaultAcmeEndpoint          = "https://acme-v02.api.letsencrypt.org/directory"
+	defaultCertificatesDirectory = "./certificates"
 )
 
 // BuildConfigFromEnv populates a GoPistolet config from env variables
@@ -58,6 +60,18 @@ func BuildConfigFromEnv() *Config {
 		config.ExternalRelayInsecureSkipVerify = true
 	}
 
+	// TLS
+	tlsDisable := getEnv("TLS_DISABLE", "")
+	if strings.ToUpper(tlsDisable) == "TRUE" {
+		config.DisableTLS = true
+	}
+	config.TLSCertificateFile = getEnv("TLS_CERTIFICATE_FILE", "")
+	config.TLSPrivateKeyFile = getEnv("TLS_PRIVATE_KEY_FILE", "")
+	config.AcmeEmail = getEnv("TLS_ACME_EMAIL", "")
+	config.AcmeEndpoint = getEnv("TLS_ACME_ENDPOINT", defaultAcmeEndpoint)
+
+	config.TLSCertificatesDirectory = getEnv("TLS_CERTIFICATES_DIRECTORY", defaultCertificatesDirectory)
+
 	return config
 }
 
@@ -78,19 +92,28 @@ type Config struct {
 	IMAPAddress         string
 	DatabaseURL         string
 
+	DisableTLS               bool
+	TLSCertificatesDirectory string
+	TLSCertificateFile       string
+	TLSPrivateKeyFile        string
+	AcmeEndpoint             string
+	AcmeEmail                string
+
 	ExternalRelayHostname           string
 	ExternalRelayPort               int
 	ExternalRelayUsername           string
 	ExternalRelayPassword           string
 	ExternalRelayInsecureSkipVerify bool
-
-	SeedDB bool
 }
 
 // Validate validates whether all config is set and valid
 func (config *Config) Validate() error {
 
 	// Core config
+	if config.Hostname == "" {
+		return fmt.Errorf("Hostname cannot be empty")
+	}
+
 	if config.SMTPAddressIncoming == "" {
 		return fmt.Errorf("SMTPAddressIncoming cannot be empty")
 	}
@@ -124,7 +147,23 @@ func (config *Config) Validate() error {
 		}
 	}
 
-	// TODO enforce hostname to be set
+	// TLS config
+	if !config.DisableTLS {
+		if config.TLSCertificateFile == "" && config.TLSPrivateKeyFile == "" {
+			if config.AcmeEndpoint == "" {
+				return fmt.Errorf("AcmeEndpoint should be defined when using TLS without providing certificates")
+			}
+			if config.AcmeEmail == "" {
+				return fmt.Errorf("AcmeEmail should be defined when using TLS without providing certificates")
+			}
+			if config.TLSCertificatesDirectory == "" {
+				return fmt.Errorf("TLSCertificatesDirectory should be defined when using TLS without providing certificates")
+			}
+		}
+		if (config.TLSCertificateFile != "" && config.TLSPrivateKeyFile == "") || (config.TLSCertificateFile == "" && config.TLSPrivateKeyFile != "") {
+			return fmt.Errorf("both TLSCertificateFile and TLSPrivateKeyFile must be defined when using custom TLS certificate")
+		}
+	}
 
 	return nil
 }
@@ -184,7 +223,6 @@ func (config *Config) GenerateIMAPBackendConfig() *imap.Config {
 	return &imap.Config{
 		IMAPAddress: config.IMAPAddress,
 		DatabaseURL: config.DatabaseURL,
-		SeedDB:      config.SeedDB,
 	}
 }
 
