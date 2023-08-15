@@ -8,6 +8,7 @@ import (
 	"github.com/gopistolet/gopistolet/backend"
 	"github.com/gopistolet/gopistolet/backend/services/certificates"
 	"github.com/gopistolet/gopistolet/handlers"
+	imaphandler "github.com/gopistolet/gopistolet/handlers/imap"
 	"github.com/gopistolet/gopistolet/handlers/received"
 	"github.com/gopistolet/gopistolet/handlers/relay"
 	"github.com/gopistolet/gopistolet/handlers/spf"
@@ -90,7 +91,7 @@ func Serve(config *Config) {
 		Handlers: []handlers.Handler{
 			received.New(mtaConfig),
 			spf.New(mtaConfig),
-			NewIMAPHandler(mtaConfig, backend.IMAPBackend),
+			imaphandler.New(mtaConfig, backend.IMAPBackend),
 		},
 	}
 

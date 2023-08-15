@@ -1,4 +1,4 @@
-package gopistolet
+package imap
 
 import (
 	imapbackend "github.com/gopistolet/gopistolet/backend/imap"
@@ -6,8 +6,8 @@ import (
 	"github.com/gopistolet/smtp/smtp"
 )
 
-// NewIMAPHandler creates a new IMAP Handler
-func NewIMAPHandler(c *server.Config, imapbackend *imapbackend.IMAPBackend) *ImapHandler {
+// New creates a new IMAP Handler
+func New(c *server.Config, imapbackend *imapbackend.IMAPBackend) *ImapHandler {
 	return &ImapHandler{
 		config:      c,
 		imapbackend: imapbackend,
