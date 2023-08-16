@@ -1,6 +1,6 @@
 # MistralMail
 
-[![Build Status](https://travis-ci.org/mistralmail/mistralmail.svg?branch=master)](https://travis-ci.org/mistralmail/mistralmail)
+# WIP: don't use this!
 
 MistralMail will be a production-ready, and easy to setup mailserver (MTA/MSA/IMAP).
 
