@@ -7,7 +7,7 @@ import (
 
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/backend/backendutil"
-	"github.com/gopistolet/gopistolet/backend/models"
+	"github.com/mistralmail/mistralmail/backend/models"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -1,9 +1,9 @@
 package imap
 
 import (
-	imapbackend "github.com/gopistolet/gopistolet/backend/imap"
-	"github.com/gopistolet/smtp/server"
-	"github.com/gopistolet/smtp/smtp"
+	imapbackend "github.com/mistralmail/mistralmail/backend/imap"
+	"github.com/mistralmail/smtp/server"
+	"github.com/mistralmail/smtp/smtp"
 )
 
 // New creates a new IMAP Handler

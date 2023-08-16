@@ -2,6 +2,6 @@ FROM golang:alpine
 
 WORKDIR /app
 
-COPY cmd/gopistolet/gopistolet /app/
+COPY cmd/mistralmail/mistralmail /app/
 
-ENTRYPOINT ["/app/gopistolet"]
+ENTRYPOINT ["/app/mistralmail"]

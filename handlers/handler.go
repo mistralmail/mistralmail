@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/gopistolet/smtp/smtp"
+	"github.com/mistralmail/smtp/smtp"
 )
 
 /**

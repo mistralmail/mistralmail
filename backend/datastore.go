@@ -3,7 +3,7 @@ package backend
 import (
 	"fmt"
 
-	"github.com/gopistolet/gopistolet/backend/models"
+	"github.com/mistralmail/mistralmail/backend/models"
 	"github.com/xo/dburl"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"

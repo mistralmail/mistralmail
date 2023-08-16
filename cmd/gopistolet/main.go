@@ -1,21 +1,21 @@
 package main
 
 import (
-	"github.com/gopistolet/gopistolet"
+	"github.com/mistralmail/mistralmail"
 	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 
-	config := gopistolet.BuildConfigFromEnv()
+	config := mistralmail.BuildConfigFromEnv()
 
 	err := config.Validate()
 	if err != nil {
 		log.Fatalf("config invalid: %v", err)
 	}
 
-	log.Printf("starting GoPistolet with config: %+v", config)
+	log.Printf("starting MistralMail with config: %+v", config)
 
-	gopistolet.Serve(config)
+	mistralmail.Serve(config)
 
 }

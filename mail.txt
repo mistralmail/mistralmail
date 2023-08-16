@@ -4,10 +4,10 @@ RCPT TO:username@example.com
 DATA
 From: contact@example.org
 To: username@example.com
-Subject: GoPistolet Test
+Subject: MistralMail Test
 Date: Wed, 11 May 2016 14:31:59 +0000
 Content-Type: text/plain
 
-Hello world GoPistolet!
+Hello world MistralMail!
 .
 QUIT

@@ -3,10 +3,10 @@ package smtpbackend
 import (
 	"fmt"
 
-	loginattempts "github.com/gopistolet/gopistolet/backend/login-attempts"
-	"github.com/gopistolet/gopistolet/backend/models"
-	"github.com/gopistolet/smtp/server"
-	"github.com/gopistolet/smtp/smtp"
+	loginattempts "github.com/mistralmail/mistralmail/backend/login-attempts"
+	"github.com/mistralmail/mistralmail/backend/models"
+	"github.com/mistralmail/smtp/server"
+	"github.com/mistralmail/smtp/smtp"
 )
 
 // SMTPUser denotes an authenticated SMTP user.

@@ -1,4 +1,4 @@
-cmd/gopistolet/gopistolet
+cmd/mistralmail/mistralmail
 config.json
 maildir
 !handlers/maildir

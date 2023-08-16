@@ -1,4 +1,4 @@
-package gopistolet
+package mistralmail
 
 import (
 	"testing"

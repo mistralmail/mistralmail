@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gopistolet/gospf"
-	"github.com/gopistolet/gospf/dns"
-	"github.com/gopistolet/smtp/server"
-	"github.com/gopistolet/smtp/smtp"
+	"github.com/mistralmail/gospf"
+	"github.com/mistralmail/gospf/dns"
+	"github.com/mistralmail/smtp/server"
+	"github.com/mistralmail/smtp/smtp"
 	log "github.com/sirupsen/logrus"
 )
 

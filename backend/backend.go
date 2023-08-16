@@ -3,14 +3,14 @@ package backend
 import (
 	"fmt"
 
-	imapbackend "github.com/gopistolet/gopistolet/backend/imap"
-	loginattempts "github.com/gopistolet/gopistolet/backend/login-attempts"
-	"github.com/gopistolet/gopistolet/backend/models"
-	smtpbackend "github.com/gopistolet/gopistolet/backend/smtp"
+	imapbackend "github.com/mistralmail/mistralmail/backend/imap"
+	loginattempts "github.com/mistralmail/mistralmail/backend/login-attempts"
+	"github.com/mistralmail/mistralmail/backend/models"
+	smtpbackend "github.com/mistralmail/mistralmail/backend/smtp"
 	"gorm.io/gorm"
 )
 
-// Backend represents the GoPistolet backend.
+// Backend represents the MistralMail backend.
 type Backend struct {
 	db          *gorm.DB
 	userRepo    *models.UserRepository

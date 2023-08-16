@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gopistolet/smtp/server"
-	"github.com/gopistolet/smtp/smtp"
+	"github.com/mistralmail/smtp/server"
+	"github.com/mistralmail/smtp/smtp"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -41,7 +41,7 @@ func TestReceivedHandler(t *testing.T) {
 		header = strings.Split(header, ";")[0]
 
 		So(err, ShouldEqual, nil)
-		So(header, ShouldEqual, "Received: from mail.example.com (192.168.0.10) by some.mail.server.example.com (192.168.0.11) with GoPistolet")
+		So(header, ShouldEqual, "Received: from mail.example.com (192.168.0.10) by some.mail.server.example.com (192.168.0.11) with MistralMail")
 
 	})
 

@@ -9,7 +9,7 @@ import (
 	"github.com/emersion/go-imap/backend/backendutil"
 	"github.com/emersion/go-message"
 	"github.com/emersion/go-message/textproto"
-	"github.com/gopistolet/gopistolet/backend/models"
+	"github.com/mistralmail/mistralmail/backend/models"
 )
 
 type IMAPMessage struct {

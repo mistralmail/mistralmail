@@ -1,10 +1,10 @@
 version: "3"
 
 services:
-  gopistolet:
+  mistralmail:
     build: 
       context: .
-    container_name: gopistolet
+    container_name: mistralmail
     environment:
       - SMTP_OUTGOING_MODE=RELAY
       - EXTERNAL_RELAY_HOSTNAME=${EXTERNAL_RELAY_HOSTNAME}

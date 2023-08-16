@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"github.com/gopistolet/gopistolet/handlers/received"
-	"github.com/gopistolet/gopistolet/handlers/spf"
-	"github.com/gopistolet/smtp/server"
+	"github.com/mistralmail/mistralmail/handlers/received"
+	"github.com/mistralmail/mistralmail/handlers/spf"
+	"github.com/mistralmail/smtp/server"
 )
 
 // LoadHandlers creates a HandlerMechanism object with the needed/available loaders

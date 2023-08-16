@@ -3,7 +3,7 @@ package handlers
 import (
 	"testing"
 
-	"github.com/gopistolet/smtp/smtp"
+	"github.com/mistralmail/smtp/smtp"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gopistolet/gopistolet/backend/models"
-	"github.com/gopistolet/smtp/smtp"
+	"github.com/mistralmail/mistralmail/backend/models"
+	"github.com/mistralmail/smtp/smtp"
 )
 
 // AddMail saves a new smtp message in the IMAP backend.

@@ -7,31 +7,31 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/gopistolet/gopistolet"
-	gopistoletbackend "github.com/gopistolet/gopistolet/backend"
+	"github.com/mistralmail/mistralmail"
+	mistralmailbackend "github.com/mistralmail/mistralmail/backend"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
 
 var (
-	config  *gopistolet.Config
-	backend *gopistoletbackend.Backend
+	config  *mistralmail.Config
+	backend *mistralmailbackend.Backend
 )
 
 func main() {
 
 	var err error
 
-	config = gopistolet.BuildConfigFromEnv()
+	config = mistralmail.BuildConfigFromEnv()
 
-	backend, err = gopistoletbackend.New(config.DatabaseURL)
+	backend, err = mistralmailbackend.New(config.DatabaseURL)
 	if err != nil {
 		log.Fatalf("couldn't create backend: %v", err)
 	}
 	defer backend.Close()
 
-	var rootCmd = &cobra.Command{Use: "gopistolet-cli"}
+	var rootCmd = &cobra.Command{Use: "mistralmail-cli"}
 
 	var createUserCmd = &cobra.Command{
 		Use:   "create-user",

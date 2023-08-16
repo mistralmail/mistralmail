@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 
-	"github.com/gopistolet/smtp/smtp"
+	"github.com/mistralmail/smtp/smtp"
 	log "github.com/sirupsen/logrus"
 
 	netSmtp "net/smtp"

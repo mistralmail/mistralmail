@@ -1,4 +1,4 @@
-package gopistolet
+package mistralmail
 
 import (
 	"fmt"
@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gopistolet/gopistolet/helpers"
-	"github.com/gopistolet/imap"
-	"github.com/gopistolet/smtp/server"
+	"github.com/mistralmail/imap"
+	"github.com/mistralmail/mistralmail/helpers"
+	"github.com/mistralmail/smtp/server"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -26,7 +26,7 @@ var (
 	defaultCertificatesDirectory = "./certificates"
 )
 
-// BuildConfigFromEnv populates a GoPistolet config from env variables
+// BuildConfigFromEnv populates a MistralMail config from env variables
 func BuildConfigFromEnv() *Config {
 	config := &Config{}
 
@@ -83,7 +83,7 @@ const (
 	SMTPOutgoingModeRelay SMTPOutgoingMode = "RELAY"
 )
 
-// Config contains all the config for serving GoPistolet
+// Config contains all the config for serving MistralMail
 type Config struct {
 	Hostname            string
 	SMTPAddressIncoming string

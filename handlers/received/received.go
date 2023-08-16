@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gopistolet/smtp/server"
-	"github.com/gopistolet/smtp/smtp"
+	"github.com/mistralmail/smtp/server"
+	"github.com/mistralmail/smtp/smtp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -39,7 +39,7 @@ func (handler *Received) Handle(state *smtp.State) error {
 	       Received: from mail.example.com (192.168.0.10) by some.mail.server.example.com (192.168.0.11) with Microsoft SMTP Server id 14.3.319.2; Wed, 5 Oct 2016 14:57:46 +0200
 	*/
 	date := time.Now().Format(time.RFC1123Z) // date-time in RFC 5322 is like RFC 1123Z
-	headerField := fmt.Sprintf("Received: from %s (%s) by %s (%s) with GoPistolet; %s\r\n", state.Hostname, state.Ip, handler.config.Hostname, handler.config.Ip, date)
+	headerField := fmt.Sprintf("Received: from %s (%s) by %s (%s) with MistralMail; %s\r\n", state.Hostname, state.Ip, handler.config.Hostname, handler.config.Ip, date)
 	state.Data = append([]byte(headerField), state.Data...)
 
 	// TODO: 'by IP' is not necessarily set in config

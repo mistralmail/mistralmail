@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/emersion/go-imap/backend"
-	"github.com/gopistolet/gopistolet/backend/models"
+	"github.com/mistralmail/mistralmail/backend/models"
 )
 
 // IMAPUser implements the emersion/go-imap User interface.

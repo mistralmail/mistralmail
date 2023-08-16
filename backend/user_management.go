@@ -3,7 +3,7 @@ package backend
 import (
 	"fmt"
 
-	"github.com/gopistolet/gopistolet/backend/models"
+	"github.com/mistralmail/mistralmail/backend/models"
 )
 
 // CreateNewUser creates and setups a new user with a mailbox

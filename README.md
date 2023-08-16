@@ -1,13 +1,13 @@
-# GoPistolet
+# MistralMail
 
-[![Build Status](https://travis-ci.org/gopistolet/gopistolet.svg?branch=master)](https://travis-ci.org/gopistolet/gopistolet)
+[![Build Status](https://travis-ci.org/mistralmail/mistralmail.svg?branch=master)](https://travis-ci.org/mistralmail/mistralmail)
 
-GoPistolet will be a production-ready, and easy to setup mailserver (MTA/MSA/IMAP).
+MistralMail will be a production-ready, and easy to setup mailserver (MTA/MSA/IMAP).
 
 
 ## Usage
 
-    go run cmd/gopistolet/*.go
+    go run cmd/mistralmail/*.go
 
 It will seed the database with a user with `username@example.com` and `password` as username and password.
 
@@ -20,9 +20,9 @@ Navigate to the parent folder and execute the following commands so you don't ha
     go work use smtp
     go work use imap-backend
 
-Also set `GOPRIVATE` so it fetches the gopistolet repos over SSH:
+Also set `GOPRIVATE` so it fetches the mistralmail repos over SSH:
 
-    go env -w "GOPRIVATE=github.com/gopistolet/*"
+    go env -w "GOPRIVATE=github.com/mistralmail/*"
 
 
 ## Acknowledgements

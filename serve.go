@@ -1,23 +1,23 @@
-package gopistolet
+package mistralmail
 
 import (
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/gopistolet/gopistolet/backend"
-	"github.com/gopistolet/gopistolet/backend/services/certificates"
-	"github.com/gopistolet/gopistolet/handlers"
-	imaphandler "github.com/gopistolet/gopistolet/handlers/imap"
-	"github.com/gopistolet/gopistolet/handlers/received"
-	"github.com/gopistolet/gopistolet/handlers/relay"
-	"github.com/gopistolet/gopistolet/handlers/spf"
-	"github.com/gopistolet/imap"
-	"github.com/gopistolet/smtp/server"
+	"github.com/mistralmail/imap"
+	"github.com/mistralmail/mistralmail/backend"
+	"github.com/mistralmail/mistralmail/backend/services/certificates"
+	"github.com/mistralmail/mistralmail/handlers"
+	imaphandler "github.com/mistralmail/mistralmail/handlers/imap"
+	"github.com/mistralmail/mistralmail/handlers/received"
+	"github.com/mistralmail/mistralmail/handlers/relay"
+	"github.com/mistralmail/mistralmail/handlers/spf"
+	"github.com/mistralmail/smtp/server"
 	log "github.com/sirupsen/logrus"
 )
 
-// Serve runs GoPistolet
+// Serve runs MistralMail
 func Serve(config *Config) {
 
 	log.SetLevel(log.DebugLevel)
@@ -25,7 +25,7 @@ func Serve(config *Config) {
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
 
-	log.Println("GoPistolet at your service!")
+	log.Println("MistralMail at your service!")
 
 	// Create backend
 	backend, err := backend.New(config.DatabaseURL)
