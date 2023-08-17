@@ -14,8 +14,8 @@ type Config struct {
 	CertificateStoreDirectory string
 	AcmeEndpoint              string
 	AcmeEmail                 string
-	// AcmeHttpPort         string
-	// AcmeTlsPort          string
+	AcmeHttpPort              string
+	AcmeTlsPort               string
 }
 
 // CertificateService stores and manages certificates.
@@ -31,6 +31,8 @@ func NewCertificateService(certificateStoreDirectory string, acmeEndpoint string
 			CertificateStoreDirectory: certificateStoreDirectory,
 			AcmeEndpoint:              acmeEndpoint,
 			AcmeEmail:                 acmeEmail,
+			AcmeHttpPort:              "80",
+			AcmeTlsPort:               "443",
 		},
 		certificates: map[string]*CertificateResource{},
 	}
@@ -78,7 +80,7 @@ func (s *CertificateService) GetOrCreateCertificate(domain string) (*Certificate
 		return cert, nil
 	}
 
-	cert, err = generateCertificateWithACMEChallenge(domain, s.config.AcmeEmail, s.config.AcmeEndpoint)
+	cert, err = generateCertificateWithACMEChallenge(domain, s.config.AcmeEmail, s.config.AcmeEndpoint, s.config.AcmeHttpPort, s.config.AcmeTlsPort)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create certificate: %w", err)
 	}

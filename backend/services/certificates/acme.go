@@ -16,7 +16,7 @@ import (
 )
 
 // generateCertificateWithACMEChallenge obtains certificates using LEGO.
-func generateCertificateWithACMEChallenge(domain string, acmeEmail string, acmeEndpoint string) (*CertificateResource, error) {
+func generateCertificateWithACMEChallenge(domain string, acmeEmail string, acmeEndpoint string, acmeHttpPort string, acmeHttpsPort string) (*CertificateResource, error) {
 
 	// Create a user. New accounts need an email and private key to start.
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -42,11 +42,11 @@ func generateCertificateWithACMEChallenge(domain string, acmeEmail string, acmeE
 	}
 
 	// Setup client
-	err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", "5002"))
+	err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", acmeHttpPort))
 	if err != nil {
 		return nil, fmt.Errorf("couldn't set http provider: %w", err)
 	}
-	err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", "5001"))
+	err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", acmeHttpsPort))
 	if err != nil {
 		return nil, fmt.Errorf("couldn't set tls provider: %w", err)
 	}
