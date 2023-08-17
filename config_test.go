@@ -11,6 +11,8 @@ func TestConfig(t *testing.T) {
 		config := &Config{}
 
 		Convey("When SMTPAddressIncoming is empty", func() {
+			config.Hostname = "test"
+			config.DisableTLS = true
 			config.SMTPAddressIncoming = ""
 			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
 			config.SMTPOutgoingMode = SMTPOutgoingModeRelay
@@ -26,6 +28,8 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey("When SMTPAddressOutgoing is empty", func() {
+			config.Hostname = "test"
+			config.DisableTLS = true
 			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
 			config.SMTPAddressOutgoing = ""
 			config.SMTPOutgoingMode = SMTPOutgoingModeRelay
@@ -41,6 +45,8 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey("When IMAPAddress is empty", func() {
+			config.Hostname = "test"
+			config.DisableTLS = true
 			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
 			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
 			config.SMTPOutgoingMode = SMTPOutgoingModeRelay
@@ -56,6 +62,8 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey("When DatabaseURL is empty", func() {
+			config.Hostname = "test"
+			config.DisableTLS = true
 			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
 			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
 			config.SMTPOutgoingMode = SMTPOutgoingModeRelay
@@ -71,6 +79,8 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey("When SMTPOutgoingMode is incorrect", func() {
+			config.Hostname = "test"
+			config.DisableTLS = true
 			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
 			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
 			config.SMTPOutgoingMode = ""
@@ -86,6 +96,8 @@ func TestConfig(t *testing.T) {
 		})
 
 		Convey("When all required fields are set", func() {
+			config.Hostname = "test"
+			config.DisableTLS = true
 			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
 			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
 			config.SMTPOutgoingMode = SMTPOutgoingModeRelay

@@ -7,13 +7,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testFile = "./test-certificates.json"
+const testDir = "./"
 
 func TestAddAndGetCertificate(t *testing.T) {
 
-	defer os.Remove(testFile)
+	defer os.Remove(testDir + certsFile)
+	defer os.Remove(testDir + "/example.com.cert.pem")
+	defer os.Remove(testDir + "/example.com.private.key")
 
-	service, err := NewCertificateService(testFile, "test_endpoint", "test_email")
+	service, err := NewCertificateService(testDir, "test_endpoint", "test_email")
 	require.NoError(t, err)
 
 	certData := &CertificateResource{ /* Initialize certificate data */ }
