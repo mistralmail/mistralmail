@@ -107,12 +107,12 @@ func (u *IMAPUser) DeleteMailbox(name string) error {
 
 	_, err := u.mailboxRepo.GetMailBoxByUserIDAndMailboxName(u.user.ID, name)
 	if err != nil {
-		err = fmt.Errorf("couldn't find mailbox: %v", err)
+		return fmt.Errorf("couldn't find mailbox: %w", err)
 	}
 
 	err = u.mailboxRepo.DeleteMailboxByUserIDAndMailboxName(u.user.ID, name)
 	if err != nil {
-		err = fmt.Errorf("couldn't delete mailbox: %v", err)
+		return fmt.Errorf("couldn't delete mailbox: %w", err)
 	}
 
 	return nil
@@ -140,13 +140,13 @@ func (u *IMAPUser) RenameMailbox(existingName, newName string) error {
 	*/
 	mailbox, err := u.mailboxRepo.GetMailBoxByUserIDAndMailboxName(u.user.ID, existingName)
 	if err != nil {
-		err = fmt.Errorf("mailbox does not exist: %v", err)
+		return fmt.Errorf("mailbox does not exist: %v", err)
 	}
 
 	mailbox.Name = newName
 	err = u.mailboxRepo.UpdateMailbox(mailbox)
 	if err != nil {
-		err = fmt.Errorf("couldn't rename mailbox: %v", err)
+		return fmt.Errorf("couldn't rename mailbox: %v", err)
 	}
 
 	return nil

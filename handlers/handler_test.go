@@ -30,7 +30,8 @@ func TestHandlersAddress(t *testing.T) {
 			},
 		}
 
-		hm.Handle(nil)
+		err := hm.Handle(nil)
+		So(err, ShouldEqual, nil)
 
 		So(count, ShouldEqual, 2)
 

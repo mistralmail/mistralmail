@@ -40,7 +40,8 @@ func main() {
 	}
 
 	rootCmd.AddCommand(createUserCmd)
-	rootCmd.Execute()
+	err = rootCmd.Execute()
+	log.Fatalf("%v", err)
 
 }
 

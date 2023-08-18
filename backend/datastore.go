@@ -45,7 +45,10 @@ func initDB(dbURL string) (*gorm.DB, error) {
 
 	// Migrate
 	// TODO: how to do this properly?
-	db.AutoMigrate(&models.User{}, &models.Mailbox{}, &models.Message{})
+	err = db.AutoMigrate(&models.User{}, &models.Mailbox{}, &models.Message{})
+	if err != nil {
+		return nil, fmt.Errorf("couldn't run migrations: %w", err)
+	}
 
 	return db, nil
 

@@ -1,10 +1,6 @@
 package imapbackend
 
-import (
-	"github.com/emersion/go-imap/backend"
-)
-
-var test backend.User = &IMAPUser{}
+// var test backend.User = &IMAPUser{}
 
 /*
 

@@ -30,7 +30,8 @@ func TestReceivedHandler(t *testing.T) {
 		}
 
 		h := New(&c)
-		h.Handle(&state)
+		err := h.Handle(&state)
+		So(err, ShouldEqual, nil)
 
 		buffer := bytes.NewBuffer(state.Data)
 

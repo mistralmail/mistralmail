@@ -21,7 +21,6 @@ var (
 	defaultIMAPPort              = 143
 	defaultIMAPAddress           = fmt.Sprintf(":%d", defaultIMAPPort)
 	defaultDatabaseURL           = "sqlite:test.db"
-	defaultSeedDB                = false
 	defaultAcmeEndpoint          = "https://acme-v02.api.letsencrypt.org/directory"
 	defaultCertificatesDirectory = "./certificates"
 )
