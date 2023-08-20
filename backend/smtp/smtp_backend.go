@@ -54,8 +54,12 @@ func (b *SMTPBackend) Login(state *smtp.State, username string, password string)
 		return nil, server.ErrInvalidCredentials
 	}
 
-	if user.Password == password {
+	passwordCorrect, err := user.CheckPassword(password)
+	if err == nil && passwordCorrect {
 		return &SMTPUser{username: username}, nil
+	}
+	if err != nil {
+		fmt.Errorf("something went wrong checking the password: %v\n", err)
 	}
 
 	if _, err := b.loginAttempts.AddFailedAttempts(remoteIP); err != nil {

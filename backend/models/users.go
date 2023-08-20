@@ -1,16 +1,51 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"fmt"
+
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
+)
 
 // User represents an email user.
 type User struct {
 	gorm.Model
-	DB *gorm.DB `gorm:"-"`
 
 	ID       uint   `gorm:"primary_key;auto_increment;not_null"`
-	Username string `gorm:"column:username;unique;not_null"`
+	Username string `gorm:"unique;not_null"`
 	Password string `gorm:"not_null"`
 	Email    string `gorm:"unique;not_null"`
+}
+
+// NewUser creates a new user and hashes the plaintext password.
+func NewUser(username string, plaintextPassword string, email string) (*User, error) {
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't hash user password: %w", err)
+	}
+
+	return &User{
+		Username: username,
+		Password: string(hashedPassword),
+		Email:    email,
+	}, nil
+}
+
+// CheckPassword validates if the given password matches the hashed password for the user.
+func (u *User) CheckPassword(plaintextPassword string) (bool, error) {
+
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plaintextPassword))
+	if err == nil {
+		return true, nil
+	}
+
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		return false, nil
+	}
+
+	return false, fmt.Errorf("couldn't validate password: %w", err)
+
 }
 
 // UserRepository implements the User repository
@@ -26,10 +61,6 @@ func NewUserRepository(db *gorm.DB) (*UserRepository, error) {
 // CreateUser creates a new user in the database.
 func (r *UserRepository) CreateUser(user *User) error {
 
-	if user.DB == nil {
-		user.DB = r.db
-	}
-
 	return r.db.Create(user).Error
 }
 
@@ -40,8 +71,6 @@ func (r *UserRepository) GetUserByID(id uint) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	user.DB = r.db
 
 	return &user, nil
 }
@@ -63,6 +92,5 @@ func (r *UserRepository) FindUserByEmail(email string) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	user.DB = r.db
 	return &user, nil
 }

@@ -11,13 +11,12 @@ func (b *Backend) CreateNewUser(email string, password string) (*models.User, er
 
 	// TODO validate user
 
-	user := &models.User{
-		Username: email,
-		Email:    email,
-		Password: password,
+	user, err := models.NewUser(email, password, email)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create user: %w", err)
 	}
 
-	err := b.userRepo.CreateUser(user)
+	err = b.userRepo.CreateUser(user)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create user: %w", err)
 	}

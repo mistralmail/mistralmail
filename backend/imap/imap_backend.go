@@ -94,9 +94,13 @@ func (b *IMAPBackend) Login(connInfo *imap.ConnInfo, email string, password stri
 		return nil, fmt.Errorf("bad username or password")
 	}
 
-	if user.Password == password {
+	passwordCorrect, err := user.CheckPassword(password)
+	if err == nil && passwordCorrect {
 		u := b.wrapUser(user)
 		return &u, nil
+	}
+	if err != nil {
+		log.WithField("remote-address", connInfo.RemoteAddr).Errorf("something went wrong checking the password: %v\n", err)
 	}
 
 	if _, err := b.loginAttempts.AddFailedAttempts(remoteIP); err != nil {
