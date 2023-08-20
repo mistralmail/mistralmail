@@ -221,7 +221,6 @@ func (config *Config) GenerateMSAConfig() *server.Config {
 func (config *Config) GenerateIMAPBackendConfig() *imap.Config {
 	return &imap.Config{
 		IMAPAddress: config.IMAPAddress,
-		DatabaseURL: config.DatabaseURL,
 	}
 }
 
