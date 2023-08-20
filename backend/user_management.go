@@ -36,3 +36,7 @@ func (b *Backend) CreateNewUser(email string, password string) (*models.User, er
 	return user, nil
 
 }
+
+func (b *Backend) ResetUserPassword(email string, newPassword string) error {
+	return nil
+}

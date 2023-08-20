@@ -878,9 +878,11 @@ github.com/mistralmail/gospf v0.0.0-20230816151716-f0afe66cc671/go.mod h1:M/VZfr
 github.com/mistralmail/imap v0.0.0-20230816155534-c5a8b2d4cdc5 h1:QrY0ZLNGxAZQ4sj//AZ6TmfIEEINeV+LkjN4gZSEaZg=
 github.com/mistralmail/imap v0.0.0-20230816155534-c5a8b2d4cdc5/go.mod h1:8Xz9iLfFAcBpB3RgxLdTn7EN+Odx9VtdFuDIm0MJDls=
 github.com/mistralmail/mistralmail v0.0.0-20230816153246-91c2beaf5547/go.mod h1:MEbRS4PBmrmftEG3rYrVUdq6+LuliKx5i04TiAIai2I=
+github.com/mistralmail/mistralmail v0.0.0-20230820133126-a67c029ab787/go.mod h1:g3E3dJfOS56JkDutYx7QiF6AZxrYBaOg3MFc71I0N8o=
 github.com/mistralmail/smtp v0.0.0-20190814094038-be4f841baca2/go.mod h1:AJp1u/8KPILg8rExYTncKOtg9sAATpdRTTgiOrzMAFQ=
-github.com/mistralmail/smtp v0.0.0-20230816153543-329aae08a180 h1:foVO9WT9cuxr/ughff4GzDg8OlFLBT9MfvepH0m4fKk=
 github.com/mistralmail/smtp v0.0.0-20230816153543-329aae08a180/go.mod h1:PGxeM8si2tjHpyvok6f9GOZMZJzjq5z5GJhlJgTna0I=
+github.com/mistralmail/smtp v0.0.0-20230820133843-1c0baa47694e h1:dLa/Dt+LSj/nv3RbV4Y2fhGzq3KuEmbBsGBAP1Z1Ev4=
+github.com/mistralmail/smtp v0.0.0-20230820133843-1c0baa47694e/go.mod h1:j8isr/Mf5GZDTH2hpZKqtRrZu7VnzbMjVUeV/w/SjYE=
 github.com/mitchellh/cli v1.0.0/go.mod h1:hNIlj7HEI86fIcpObd7a0FcrxTWetlwJDGcceTlRvqc=
 github.com/mitchellh/cli v1.1.5/go.mod h1:v8+iFts2sPIKUV1ltktPXMCC8fumSKFItNcD2cLtRR4=
 github.com/mitchellh/copystructure v1.0.0/go.mod h1:SNtv71yrdKgLRyLFxmLdkAbkKEFWgYaq1OVrnRcwhnw=
