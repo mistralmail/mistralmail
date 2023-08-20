@@ -48,6 +48,9 @@ func main() {
 	rootCmd.AddCommand(createUserCmd)
 	rootCmd.AddCommand(resetPasswordCmd)
 	err = rootCmd.Execute()
+	if err != nil {
+		log.Fatalf("somethign went wrong: %v", err)
+	}
 
 }
 
