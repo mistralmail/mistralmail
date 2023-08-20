@@ -49,7 +49,7 @@ func (b *SMTPBackend) Login(state *smtp.State, username string, password string)
 	user, err := b.userRepo.FindUserByEmail(username)
 	if err != nil {
 		if _, err := b.loginAttempts.AddFailedAttempts(remoteIP); err != nil {
-			return nil, fmt.Errorf("couldn't increase log-in attempts: %v\n", err)
+			return nil, fmt.Errorf("couldn't increase log-in attempts: %w\n", err)
 		}
 		return nil, server.ErrInvalidCredentials
 	}
@@ -59,11 +59,11 @@ func (b *SMTPBackend) Login(state *smtp.State, username string, password string)
 		return &SMTPUser{username: username}, nil
 	}
 	if err != nil {
-		fmt.Errorf("something went wrong checking the password: %v\n", err)
+		return nil, fmt.Errorf("something went wrong checking the password: %w\n", err)
 	}
 
 	if _, err := b.loginAttempts.AddFailedAttempts(remoteIP); err != nil {
-		return nil, fmt.Errorf("couldn't increase log-in attempts: %v\n", err)
+		return nil, fmt.Errorf("couldn't increase log-in attempts: %w\n", err)
 	}
 
 	return nil, server.ErrInvalidCredentials

@@ -20,14 +20,14 @@ type User struct {
 // NewUser creates a new user and hashes the plaintext password.
 func NewUser(username string, plaintextPassword string, email string) (*User, error) {
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
+	hashedPassword, err := HashPassword(plaintextPassword)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't hash user password: %w", err)
 	}
 
 	return &User{
 		Username: username,
-		Password: string(hashedPassword),
+		Password: hashedPassword,
 		Email:    email,
 	}, nil
 }
@@ -93,4 +93,16 @@ func (r *UserRepository) FindUserByEmail(email string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+// HashPassword hashes a password.
+func HashPassword(plaintextPassword string) (string, error) {
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plaintextPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hashedPassword), nil
+
 }

@@ -37,6 +37,25 @@ func (b *Backend) CreateNewUser(email string, password string) (*models.User, er
 
 }
 
+// ResetUserPassword resets the passwords of a user.
 func (b *Backend) ResetUserPassword(email string, newPassword string) error {
+
+	user, err := b.userRepo.FindUserByEmail(email)
+	if err != nil {
+		return fmt.Errorf("couldn't find user: %w", err)
+	}
+
+	hashedPassword, err := models.HashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("couldn't hash user password: %w", err)
+	}
+
+	user.Password = hashedPassword
+
+	err = b.userRepo.UpdateUser(user)
+	if err != nil {
+		return fmt.Errorf("couldn't save user: %w", err)
+	}
+
 	return nil
 }

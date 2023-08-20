@@ -39,9 +39,15 @@ func main() {
 		Run:   handleCreateUserCommand,
 	}
 
+	var resetPasswordCmd = &cobra.Command{
+		Use:   "reset-password",
+		Short: "Reset the password of a user",
+		Run:   handleResetPasswordCommand,
+	}
+
 	rootCmd.AddCommand(createUserCmd)
+	rootCmd.AddCommand(resetPasswordCmd)
 	err = rootCmd.Execute()
-	log.Fatalf("%v", err)
 
 }
 
@@ -59,6 +65,7 @@ func handleCreateUserCommand(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("\nRepeat password: ")
 	password2Bytes, _ := term.ReadPassword(int(syscall.Stdin))
+	fmt.Printf("\n")
 	password2 := string(password2Bytes)
 	password2 = strings.TrimSpace(password2)
 
@@ -71,4 +78,34 @@ func handleCreateUserCommand(cmd *cobra.Command, args []string) {
 		log.Fatalf("couldn't create new user: %v", err)
 	}
 	log.Printf("Successfully created new user %s with id %d", user.Email, user.ID)
+}
+
+func handleResetPasswordCommand(cmd *cobra.Command, args []string) {
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Printf("Email: ")
+	email, _ := reader.ReadString('\n')
+	email = strings.TrimSpace(email)
+
+	fmt.Printf("Password: ")
+	passwordBytes, _ := term.ReadPassword(int(syscall.Stdin))
+	password := string(passwordBytes)
+	password = strings.TrimSpace(password)
+
+	fmt.Printf("\nRepeat password: ")
+	password2Bytes, _ := term.ReadPassword(int(syscall.Stdin))
+	fmt.Printf("\n")
+	password2 := string(password2Bytes)
+	password2 = strings.TrimSpace(password2)
+
+	if password != password2 {
+		log.Fatalf("passwords don't match")
+	}
+
+	err := backend.ResetUserPassword(email, password)
+	if err != nil {
+		log.Fatalf("couldn't reset password of user: %v", err)
+	}
+	log.Printf("Password reset was successful!")
+
 }
