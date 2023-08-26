@@ -12,6 +12,9 @@ func TestConfig(t *testing.T) {
 
 		Convey("When SMTPAddressIncoming is empty", func() {
 			config.Hostname = "test"
+			config.HTTPAddress = ":8080"
+			config.MetricsAddress = ":9000"
+			config.Secret = "some-secret"
 			config.DisableTLS = true
 			config.SMTPAddressIncoming = ""
 			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
@@ -29,6 +32,9 @@ func TestConfig(t *testing.T) {
 
 		Convey("When SMTPAddressOutgoing is empty", func() {
 			config.Hostname = "test"
+			config.HTTPAddress = ":8080"
+			config.MetricsAddress = ":9000"
+			config.Secret = "some-secret"
 			config.DisableTLS = true
 			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
 			config.SMTPAddressOutgoing = ""
@@ -46,6 +52,9 @@ func TestConfig(t *testing.T) {
 
 		Convey("When IMAPAddress is empty", func() {
 			config.Hostname = "test"
+			config.HTTPAddress = ":8080"
+			config.MetricsAddress = ":9000"
+			config.Secret = "some-secret"
 			config.DisableTLS = true
 			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
 			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
@@ -63,6 +72,9 @@ func TestConfig(t *testing.T) {
 
 		Convey("When DatabaseURL is empty", func() {
 			config.Hostname = "test"
+			config.HTTPAddress = ":8080"
+			config.MetricsAddress = ":9000"
+			config.Secret = "some-secret"
 			config.DisableTLS = true
 			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
 			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
@@ -80,6 +92,9 @@ func TestConfig(t *testing.T) {
 
 		Convey("When SMTPOutgoingMode is incorrect", func() {
 			config.Hostname = "test"
+			config.HTTPAddress = ":8080"
+			config.MetricsAddress = ":9000"
+			config.Secret = "some-secret"
 			config.DisableTLS = true
 			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
 			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
@@ -97,6 +112,9 @@ func TestConfig(t *testing.T) {
 
 		Convey("When all required fields are set", func() {
 			config.Hostname = "test"
+			config.HTTPAddress = ":8080"
+			config.MetricsAddress = ":9000"
+			config.Secret = "some-secret"
 			config.DisableTLS = true
 			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
 			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
