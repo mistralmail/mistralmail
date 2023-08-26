@@ -6,6 +6,7 @@ import (
 
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	log "github.com/sirupsen/logrus"
 )
 
 func (api *API) loginHandler(c echo.Context) error {
@@ -13,16 +14,35 @@ func (api *API) loginHandler(c echo.Context) error {
 	email := c.FormValue("email")
 	password := c.FormValue("password")
 
-	// Authenticate the user by querying your UserRepository.
-	user, err := api.backend.UserRepo.FindUserByEmail(email)
+	// Check against bruteforce
+	canLogin, err := api.backend.LoginAttempts.CanLogin(c.RealIP())
 	if err != nil {
-		return echo.ErrUnauthorized
-	}
-	canLogin, err := user.CheckPassword(password)
-	if err != nil {
+		log.Errorf("couldn't check login attempts: %v", err)
 		return echo.ErrInternalServerError
 	}
 	if !canLogin {
+		log.Errorf("login attempts exceeded for: %s", c.RealIP())
+		return echo.ErrTooManyRequests
+	}
+
+	// Authenticate the user by querying your UserRepository.
+	user, err := api.backend.UserRepo.FindUserByEmail(email)
+	if err != nil {
+		_, err := api.backend.LoginAttempts.AddFailedAttempts(c.RealIP())
+		if err != nil {
+			log.Errorf("couldn't increase login attempts: %v", err)
+		}
+		return echo.ErrUnauthorized
+	}
+	validLogin, err := user.CheckPassword(password)
+	if err != nil {
+		return echo.ErrInternalServerError
+	}
+	if !validLogin {
+		_, err := api.backend.LoginAttempts.AddFailedAttempts(c.RealIP())
+		if err != nil {
+			log.Errorf("couldn't increase login attempts: %v", err)
+		}
 		return echo.ErrUnauthorized
 	}
 
