@@ -111,6 +111,8 @@ func Serve(config *Config) {
 
 	// Run SMTP MTA
 	mtaConfig := config.GenerateMTAConfig()
+	mtaConfig.TlsCert = cert.CertificateFile
+	mtaConfig.TlsKey = cert.PrivateKeyFile
 
 	mtaHandlerChain := &handlers.HandlerMachanism{
 		Handlers: []handlers.Handler{
