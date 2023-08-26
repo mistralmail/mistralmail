@@ -22,7 +22,9 @@ func (api *API) loginHandler(c echo.Context) error {
 	}
 	if !canLogin {
 		log.Errorf("login attempts exceeded for: %s", c.RealIP())
-		return echo.ErrTooManyRequests
+		return c.JSON(http.StatusTooManyRequests, map[string]interface{}{
+			"error": "Too many failed login attempts",
+		})
 	}
 
 	// Authenticate the user by querying your UserRepository.
@@ -32,7 +34,9 @@ func (api *API) loginHandler(c echo.Context) error {
 		if err != nil {
 			log.Errorf("couldn't increase login attempts: %v", err)
 		}
-		return echo.ErrUnauthorized
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"error": "Email or password incorrect",
+		})
 	}
 	validLogin, err := user.CheckPassword(password)
 	if err != nil {
@@ -43,7 +47,9 @@ func (api *API) loginHandler(c echo.Context) error {
 		if err != nil {
 			log.Errorf("couldn't increase login attempts: %v", err)
 		}
-		return echo.ErrUnauthorized
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"error": "Email or password incorrect",
+		})
 	}
 
 	// Create a JWT token.

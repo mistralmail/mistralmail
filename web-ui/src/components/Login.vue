@@ -2,7 +2,14 @@
 <v-container class="fill-height fluid align-center">
     
     <div class="d-flex align-center justify-center" style="height: 100vh">
+
+        
+        
+
         <v-sheet width="400" class="mx-auto">
+
+            <v-alert v-if="loginError"  :text="loginError" type="error" class="mb-8"></v-alert>
+            
             <v-form fast-fail @submit.prevent="login">
                 <v-text-field v-model="email" label="E-mail" type="email"></v-text-field>
 
@@ -30,6 +37,7 @@ export default {
         return {
             email: '',
             password: '',
+            loginError: '',
         };
     },
     methods: {
@@ -56,6 +64,12 @@ export default {
             .catch((error) => {
                 // Handle errors here
                 console.error('Error:', error);
+
+                if (error.response && error.response.data.error) {
+                    this.loginError = error.response.data.error;
+                } else {
+                    this.loginError = "Oops, something went wrong..."
+                }
             });
         },
     },
