@@ -5,9 +5,20 @@ import (
 	"fmt"
 
 	"github.com/mistralmail/smtp/smtp"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
 
 	netSmtp "net/smtp"
+)
+
+// Define a counter vector for successful SMTP deliveries.
+var smtpDelivered = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "smtp_delivered",
+		Help: "SMTP deliveries status (success or error)",
+	},
+	[]string{"status"}, // The label "status" can have values "success" or "error".
 )
 
 // New creates a new Relay handler.
@@ -41,6 +52,9 @@ func (handler *Relay) Handle(state *smtp.State) error {
 			"Hostname":  state.Hostname,
 		}).Errorf("Couldn't deliver message to relay: %v", err)
 
+		// Increment the "error" counter.
+		smtpDelivered.WithLabelValues("error").Inc()
+
 		return err
 	}
 
@@ -49,6 +63,9 @@ func (handler *Relay) Handle(state *smtp.State) error {
 		"SessionId": state.SessionId.String(),
 		"Hostname":  state.Hostname,
 	}).Debug("Delived message to relay")
+
+	// Increment the "success" counter.
+	smtpDelivered.WithLabelValues("success").Inc()
 
 	return nil
 }

@@ -22,6 +22,8 @@ var (
 	defaultIMAPAddress           = fmt.Sprintf(":%d", defaultIMAPPort)
 	defaultHTTPPort              = 8080
 	defaultHTTPAddress           = fmt.Sprintf(":%d", defaultHTTPPort)
+	defaultMetricsPort           = 9000
+	defaultMetricsAddress        = fmt.Sprintf(":%d", defaultMetricsPort)
 	defaultDatabaseURL           = "sqlite:test.db"
 	defaultAcmeEndpoint          = "https://acme-v02.api.letsencrypt.org/directory"
 	defaultCertificatesDirectory = "./certificates"
@@ -78,6 +80,9 @@ func BuildConfigFromEnv() *Config {
 
 	config.Secret = getEnv("SECRET", "")
 
+	// Metrics
+	config.MetricsAddress = getEnv("METRICS_ADDRESS", defaultMetricsAddress)
+
 	return config
 }
 
@@ -99,6 +104,7 @@ type Config struct {
 	HTTPAddress         string
 	DatabaseURL         string
 	Secret              string
+	MetricsAddress      string
 
 	DisableTLS               bool
 	TLSCertificatesDirectory string
@@ -179,6 +185,11 @@ func (config *Config) Validate() error {
 	}
 	if config.Secret == "" {
 		return fmt.Errorf("Secret cannot be empty")
+	}
+
+	// Metrics
+	if config.MetricsAddress == "" {
+		return fmt.Errorf("MetricsAddress cannot be empty")
 	}
 
 	return nil

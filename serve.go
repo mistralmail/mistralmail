@@ -1,6 +1,7 @@
 package mistralmail
 
 import (
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,6 +16,7 @@ import (
 	"github.com/mistralmail/mistralmail/handlers/relay"
 	"github.com/mistralmail/mistralmail/handlers/spf"
 	"github.com/mistralmail/smtp/server"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -47,6 +49,13 @@ func Serve(config *Config) {
 	}
 	go func() {
 		api.Serve()
+	}()
+
+	// Serve metrics
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		log.Printf("Serving metrics on %s/metrics", config.MetricsAddress)
+		http.ListenAndServe(config.MetricsAddress, nil)
 	}()
 
 	// Create certificates store
