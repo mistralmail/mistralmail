@@ -19,12 +19,35 @@ RUN GOOS=linux GOARCH=$TARGETARCH CGO_ENABLED=1 go build -o /random_work_dir/mis
 RUN GOOS=linux GOARCH=$TARGETARCH CGO_ENABLED=1 go build -o /random_work_dir/mistralmail-cli ./cmd/mistralmail-cli
 
 
+FROM node:16 as buildWeb
+
+ARG TARGETARCH
+
+WORKDIR /random_work_dir/web-ui/
+
+RUN npm install -g vite
+
+COPY /web-ui /random_work_dir/web-ui
+
+
+RUN yarn install
+
+RUN yarn build
+
+RUN ls /
+RUN ls /random_work_dir/
+RUN ls /random_work_dir/web-ui
+
+
+
 FROM golang:latest
 
 WORKDIR /
 
 COPY --from=build --chown=${USERNAME}:${USERNAME} /random_work_dir/mistralmail /mistralmail/
 COPY --from=build --chown=${USERNAME}:${USERNAME} /random_work_dir/mistralmail-cli /mistralmail/
+
+COPY --from=buildWeb --chown=${USERNAME}:${USERNAME} /random_work_dir/web-ui/dist /mistralmail/web-ui/dist
 
 WORKDIR /mistralmail
 

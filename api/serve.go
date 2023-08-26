@@ -60,6 +60,14 @@ func (api *API) Serve() {
 	// Metrics
 	g.GET("/metrics", api.metricsJSONHandler)
 
+	// Web UI
+	e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+		Root:  "./web-ui/dist",
+		Index: "index.html",
+		HTML5: true,
+		//Filesystem: http.FS(staticFS),
+	}))
+
 	// Start the Echo server.
 	log.Printf("Starting API at %s", api.config.HTTPAddress)
 	e.Start(api.config.HTTPAddress)
