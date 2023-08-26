@@ -105,6 +105,15 @@ func (r *UserRepository) GetAllUsers() ([]*User, error) {
 	return users, nil
 }
 
+// GetTotalUsersCount returns the total number of users in the database.
+func (r *UserRepository) GetTotalUsersCount() (int64, error) {
+	var count int64
+	if err := r.db.Model(&User{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // HashPassword hashes a password.
 func HashPassword(plaintextPassword string) (string, error) {
 

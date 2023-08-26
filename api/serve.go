@@ -51,10 +51,14 @@ func (api *API) Serve() {
 		SigningKey: api.config.Secret,
 	}))
 
+	// Users
 	g.GET("/users", api.getAllUsersHandler)
 	g.DELETE("/users/:id", api.deleteUserHandler)
 	g.POST("/users", api.createNewUserHandler)
 	g.POST("/reset-password", api.resetPasswordHandler)
+
+	// Metrics
+	g.GET("/metrics", api.metricsJSONHandler)
 
 	// Start the Echo server.
 	log.Printf("Starting API at %s", api.config.HTTPAddress)

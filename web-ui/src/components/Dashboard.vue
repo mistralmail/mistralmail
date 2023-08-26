@@ -2,6 +2,7 @@
   <v-container class="fill-height">
     <v-responsive class="fill-height d-flex">
       
+
       <v-row>
 
         <v-col cols="12" sm="6" md="3">
@@ -19,7 +20,7 @@
               class="text-h4"
               cols="6"
             >
-              10
+            {{  metrics.Users }}
             </v-col>
             </v-card-text>
           </v-card>
@@ -44,7 +45,7 @@
           class="text-h4"
           cols="6"
         >
-          1024
+        {{  metrics.Messages }}
         </v-col>
         </v-card-text>
       </v-card>
@@ -58,7 +59,7 @@
         prepend-icon="mdi-email-arrow-right"
       >
         <template v-slot:title>
-          Sent today
+          SMTP delivered
         </template>
 
         <v-card-text>
@@ -66,7 +67,7 @@
           class="text-h4"
           cols="6"
         >
-          42
+        {{  metrics.SMTPDelivered }}
         </v-col>
         </v-card-text>
       </v-card>
@@ -80,7 +81,7 @@
         prepend-icon="mdi-email-plus"
       >
         <template v-slot:title>
-          Received today
+          SMTP received
         </template>
 
         <v-card-text>
@@ -88,7 +89,7 @@
           class="text-h4"
           cols="6"
         >
-          92
+        {{  metrics.SMTPReceived }}
         </v-col>
         </v-card-text>
       </v-card>
@@ -103,5 +104,34 @@
 </template>
 
 <script setup>
-  //
+  import { ref, onMounted } from 'vue';
+  import { useStore } from 'vuex';
+  import axios from 'axios';
+  
+  // Access the Vuex store
+  const store = useStore();
+  
+  // Get the token from the Vuex store
+  const token = store.state.token;
+  
+  const metrics = ref([]);
+
+  
+  onMounted(async () => {
+    load_metrics();
+  });
+
+  function load_metrics() {
+    axios.get('/api/metrics', {
+    headers: {
+        Authorization: `Bearer ${token}`,
+    },
+    })
+    .then(function(response){
+        metrics.value = response.data;
+    })
+    .catch (function(error){
+        console.error('Error fetching metrics:', error);
+    })
+  }
 </script>

@@ -92,3 +92,12 @@ func (r *MessageRepository) GetNumberOfMessagesByMailboxID(mailboxID uint) (uint
 	return uint(count), err
 
 }
+
+// GetTotalMessagesCount returns the total number of messages in the database.
+func (r *MessageRepository) GetTotalMessagesCount() (int64, error) {
+	var count int64
+	if err := r.db.Model(&Message{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
