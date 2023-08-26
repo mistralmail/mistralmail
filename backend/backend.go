@@ -13,14 +13,14 @@ import (
 // Backend represents the MistralMail backend.
 type Backend struct {
 	db          *gorm.DB
-	userRepo    *models.UserRepository
-	mailboxRepo *models.MailboxRepository
-	messageRepo *models.MessageRepository
+	UserRepo    *models.UserRepository
+	MailboxRepo *models.MailboxRepository
+	MessageRepo *models.MessageRepository
 
 	SMTPBackend *smtpbackend.SMTPBackend
 	IMAPBackend *imapbackend.IMAPBackend
 
-	loginattempts *loginattempts.LoginAttempts
+	LoginAttempts *loginattempts.LoginAttempts
 }
 
 // New creates a new backend with the provided database url.
@@ -63,12 +63,12 @@ func New(dbURL string) (*Backend, error) {
 
 	return &Backend{
 		db:            db,
-		userRepo:      userRepo,
-		mailboxRepo:   mailboxRepo,
-		messageRepo:   messageRepo,
+		UserRepo:      userRepo,
+		MailboxRepo:   mailboxRepo,
+		MessageRepo:   messageRepo,
 		IMAPBackend:   imapBackend,
 		SMTPBackend:   smtpBackend,
-		loginattempts: loginAttempts,
+		LoginAttempts: loginAttempts,
 	}, nil
 }
 

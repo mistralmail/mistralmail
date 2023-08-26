@@ -13,7 +13,7 @@ type User struct {
 
 	ID       uint   `gorm:"primary_key;auto_increment;not_null"`
 	Username string `gorm:"unique;not_null"`
-	Password string `gorm:"not_null"`
+	Password string `gorm:"not_null" json:"-"`
 	Email    string `gorm:"unique;not_null"`
 }
 
@@ -93,6 +93,16 @@ func (r *UserRepository) FindUserByEmail(email string) (*User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+// GetAllUsers retrieves all users from the database.
+func (r *UserRepository) GetAllUsers() ([]*User, error) {
+	var users []*User
+	err := r.db.Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 // HashPassword hashes a password.

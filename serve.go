@@ -6,6 +6,7 @@ import (
 	"syscall"
 
 	"github.com/mistralmail/imap"
+	"github.com/mistralmail/mistralmail/api"
 	"github.com/mistralmail/mistralmail/backend"
 	"github.com/mistralmail/mistralmail/backend/services/certificates"
 	"github.com/mistralmail/mistralmail/handlers"
@@ -37,6 +38,15 @@ func Serve(config *Config) {
 		if err != nil {
 			log.Errorf("Couldn't close backend: %v", err)
 		}
+	}()
+
+	// Run admin api
+	api, err := api.New(api.Config{HTTPAddress: ":9000", Secret: []byte("foo")}, backend)
+	if err != nil {
+		log.Fatalf("Couldn't create API: %v", err)
+	}
+	go func() {
+		api.Serve()
 	}()
 
 	// Create certificates store

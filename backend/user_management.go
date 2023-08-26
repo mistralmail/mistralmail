@@ -4,19 +4,27 @@ import (
 	"fmt"
 
 	"github.com/mistralmail/mistralmail/backend/models"
+	"github.com/mistralmail/smtp/smtp"
 )
 
 // CreateNewUser creates and setups a new user with a mailbox
 func (b *Backend) CreateNewUser(email string, password string) (*models.User, error) {
 
-	// TODO validate user
+	// TODO validate user move somewhere else probably
+	if _, err := smtp.ParseAddress(email); err != nil {
+		return nil, fmt.Errorf("invalid email address: %w", err)
+	}
+	if password == "" {
+		// TODO have some password requirements
+		return nil, fmt.Errorf("expected password")
+	}
 
 	user, err := models.NewUser(email, password, email)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create user: %w", err)
 	}
 
-	err = b.userRepo.CreateUser(user)
+	err = b.UserRepo.CreateUser(user)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create user: %w", err)
 	}
@@ -28,7 +36,7 @@ func (b *Backend) CreateNewUser(email string, password string) (*models.User, er
 		User:       user,
 	}
 
-	err = b.mailboxRepo.CreateMailbox(mailbox)
+	err = b.MailboxRepo.CreateMailbox(mailbox)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create inbox for user: %w", err)
 	}
@@ -40,7 +48,7 @@ func (b *Backend) CreateNewUser(email string, password string) (*models.User, er
 // ResetUserPassword resets the passwords of a user.
 func (b *Backend) ResetUserPassword(email string, newPassword string) error {
 
-	user, err := b.userRepo.FindUserByEmail(email)
+	user, err := b.UserRepo.FindUserByEmail(email)
 	if err != nil {
 		return fmt.Errorf("couldn't find user: %w", err)
 	}
@@ -52,7 +60,7 @@ func (b *Backend) ResetUserPassword(email string, newPassword string) error {
 
 	user.Password = hashedPassword
 
-	err = b.userRepo.UpdateUser(user)
+	err = b.UserRepo.UpdateUser(user)
 	if err != nil {
 		return fmt.Errorf("couldn't save user: %w", err)
 	}
