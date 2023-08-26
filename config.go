@@ -20,6 +20,8 @@ var (
 	defaultSMTPAddressOutgoing   = fmt.Sprintf(":%d", defaultSMTPPortOutgoing)
 	defaultIMAPPort              = 143
 	defaultIMAPAddress           = fmt.Sprintf(":%d", defaultIMAPPort)
+	defaultHTTPPort              = 8080
+	defaultHTTPAddress           = fmt.Sprintf(":%d", defaultHTTPPort)
 	defaultDatabaseURL           = "sqlite:test.db"
 	defaultAcmeEndpoint          = "https://acme-v02.api.letsencrypt.org/directory"
 	defaultCertificatesDirectory = "./certificates"
@@ -71,6 +73,11 @@ func BuildConfigFromEnv() *Config {
 
 	config.TLSCertificatesDirectory = getEnv("TLS_CERTIFICATES_DIRECTORY", defaultCertificatesDirectory)
 
+	// HTTP
+	config.HTTPAddress = getEnv("HTTP_ADDRESS", defaultHTTPAddress)
+
+	config.Secret = getEnv("SECRET", "")
+
 	return config
 }
 
@@ -89,7 +96,9 @@ type Config struct {
 	SMTPAddressOutgoing string
 	SMTPOutgoingMode    SMTPOutgoingMode
 	IMAPAddress         string
+	HTTPAddress         string
 	DatabaseURL         string
+	Secret              string
 
 	DisableTLS               bool
 	TLSCertificatesDirectory string
@@ -162,6 +171,14 @@ func (config *Config) Validate() error {
 		if (config.TLSCertificateFile != "" && config.TLSPrivateKeyFile == "") || (config.TLSCertificateFile == "" && config.TLSPrivateKeyFile != "") {
 			return fmt.Errorf("both TLSCertificateFile and TLSPrivateKeyFile must be defined when using custom TLS certificate")
 		}
+	}
+
+	// HTTP server & api
+	if config.HTTPAddress == "" {
+		return fmt.Errorf("HTTPAddress cannot be empty")
+	}
+	if config.Secret == "" {
+		return fmt.Errorf("Secret cannot be empty")
 	}
 
 	return nil

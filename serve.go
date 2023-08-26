@@ -41,7 +41,7 @@ func Serve(config *Config) {
 	}()
 
 	// Run admin api
-	api, err := api.New(api.Config{HTTPAddress: ":9000", Secret: []byte("foo")}, backend)
+	api, err := api.New(api.Config{HTTPAddress: config.HTTPAddress, Secret: []byte(config.Secret)}, backend)
 	if err != nil {
 		log.Fatalf("Couldn't create API: %v", err)
 	}
