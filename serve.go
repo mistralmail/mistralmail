@@ -48,14 +48,20 @@ func Serve(config *Config) {
 		log.Fatalf("Couldn't create API: %v", err)
 	}
 	go func() {
-		api.Serve()
+		err := api.Serve()
+		if err != nil {
+			log.Fatalf("Couldn't serve API: %v", err)
+		}
 	}()
 
 	// Serve metrics
 	go func() {
 		http.Handle("/metrics", promhttp.Handler())
 		log.Printf("Serving metrics on %s/metrics", config.MetricsAddress)
-		http.ListenAndServe(config.MetricsAddress, nil)
+		err := http.ListenAndServe(config.MetricsAddress, nil)
+		if err != nil {
+			log.Fatalf("Couldn't serve metrics: %v", err)
+		}
 	}()
 
 	// Create certificates store

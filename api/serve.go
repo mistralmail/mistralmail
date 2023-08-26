@@ -30,7 +30,7 @@ func New(config Config, backend *backend.Backend) (*API, error) {
 }
 
 // Serve the API.
-func (api *API) Serve() {
+func (api *API) Serve() error {
 	// Create an Echo instance.
 	e := echo.New()
 
@@ -70,5 +70,6 @@ func (api *API) Serve() {
 
 	// Start the Echo server.
 	log.Printf("Starting API at %s", api.config.HTTPAddress)
-	e.Start(api.config.HTTPAddress)
+
+	return e.Start(api.config.HTTPAddress)
 }
