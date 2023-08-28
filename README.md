@@ -157,6 +157,7 @@ Another feature we are also not working on currently is anti-spam. Only SPF is c
 * [Testify](https://github.com/stretchr/testify)
 * [GoConvey](https://github.com/smartystreets/goconvey)
 * [go-imap](https://github.com/emersion/go-imap)
+* [logrus_sentry](https://github.com/evalphobia/logrus_sentry)
 
 
 
