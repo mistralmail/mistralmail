@@ -1,6 +1,7 @@
 package mistralmail
 
 import (
+	"os"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -8,124 +9,64 @@ import (
 
 func TestConfig(t *testing.T) {
 	Convey("Given a Config instance", t, func() {
-		config := &Config{}
 
-		Convey("When SMTPAddressIncoming is empty", func() {
-			config.Hostname = "test"
-			config.HTTPAddress = ":8080"
-			config.MetricsAddress = ":9000"
-			config.Secret = "some-secret"
-			config.DisableTLS = true
-			config.SMTPAddressIncoming = ""
-			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
-			config.SMTPOutgoingMode = SMTPOutgoingModeRelay
-			config.IMAPAddress = "imap.example.com:143"
-			config.DatabaseURL = "sqlite:file.db"
+		Convey("When HOSTNAME is empty", func() {
+			os.Setenv("HOSTNAME", "")
+			os.Setenv("HTTP_ADDRESS", ":8080")
+			os.Setenv("METRICS_ADDRESS", ":9000")
+			os.Setenv("SECRET", "some-secret")
+			os.Setenv("DISABLE_TLS", "true")
+			os.Setenv("SMTP_ADDRESS_INCOMING", "")
+			os.Setenv("SMTP_ADDRESS_OUTGOING", "smtp.outgoing.example.com:587")
+			os.Setenv("SMTP_OTGOING_MODE", "RELAY")
+			os.Setenv("IMAP_ADDRESS", "imap.example.com:143")
+			os.Setenv("DATABASE_URL", "sqlite:file.db")
+
+			config := BuildConfigFromEnv()
 
 			err := config.Validate()
 
 			Convey("Then it should return an error", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "SMTPAddressIncoming cannot be empty")
+				So(err.Error(), ShouldEqual, "Hostname cannot be empty")
 			})
 		})
 
-		Convey("When SMTPAddressOutgoing is empty", func() {
-			config.Hostname = "test"
-			config.HTTPAddress = ":8080"
-			config.MetricsAddress = ":9000"
-			config.Secret = "some-secret"
-			config.DisableTLS = true
-			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
-			config.SMTPAddressOutgoing = ""
-			config.SMTPOutgoingMode = SMTPOutgoingModeRelay
-			config.IMAPAddress = "imap.example.com:143"
-			config.DatabaseURL = "sqlite:file.db"
+		Convey("When SECRET is empty", func() {
+			os.Setenv("HOSTNAME", "test")
+			os.Setenv("HTTP_ADDRESS", ":8080")
+			os.Setenv("METRICS_ADDRESS", ":9000")
+			os.Setenv("SECRET", "")
+			os.Setenv("DISABLE_TLS", "true")
+			os.Setenv("SMTP_ADDRESS_INCOMING", "")
+			os.Setenv("SMTP_ADDRESS_OUTGOING", "smtp.outgoing.example.com:587")
+			os.Setenv("SMTP_OTGOING_MODE", "RELAY")
+			os.Setenv("IMAP_ADDRESS", "imap.example.com:143")
+			os.Setenv("DATABASE_URL", "sqlite:file.db")
+
+			config := BuildConfigFromEnv()
 
 			err := config.Validate()
 
 			Convey("Then it should return an error", func() {
 				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "SMTPAddressOutgoing cannot be empty")
-			})
-		})
-
-		Convey("When IMAPAddress is empty", func() {
-			config.Hostname = "test"
-			config.HTTPAddress = ":8080"
-			config.MetricsAddress = ":9000"
-			config.Secret = "some-secret"
-			config.DisableTLS = true
-			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
-			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
-			config.SMTPOutgoingMode = SMTPOutgoingModeRelay
-			config.IMAPAddress = ""
-			config.DatabaseURL = "sqlite:file.db"
-
-			err := config.Validate()
-
-			Convey("Then it should return an error", func() {
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "IMAPAddress cannot be empty")
-			})
-		})
-
-		Convey("When DatabaseURL is empty", func() {
-			config.Hostname = "test"
-			config.HTTPAddress = ":8080"
-			config.MetricsAddress = ":9000"
-			config.Secret = "some-secret"
-			config.DisableTLS = true
-			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
-			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
-			config.SMTPOutgoingMode = SMTPOutgoingModeRelay
-			config.IMAPAddress = "imap.example.com:143"
-			config.DatabaseURL = ""
-
-			err := config.Validate()
-
-			Convey("Then it should return an error", func() {
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "DatabaseURL cannot be empty")
-			})
-		})
-
-		Convey("When SMTPOutgoingMode is incorrect", func() {
-			config.Hostname = "test"
-			config.HTTPAddress = ":8080"
-			config.MetricsAddress = ":9000"
-			config.Secret = "some-secret"
-			config.DisableTLS = true
-			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
-			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
-			config.SMTPOutgoingMode = ""
-			config.IMAPAddress = "imap.example.com:143"
-			config.DatabaseURL = "sqlite:file.db"
-
-			err := config.Validate()
-
-			Convey("Then it should return an error", func() {
-				So(err, ShouldNotBeNil)
-				So(err.Error(), ShouldEqual, "SMTPOutgoingMode cannot be empty")
+				So(err.Error(), ShouldEqual, "Secret cannot be empty")
 			})
 		})
 
 		Convey("When all required fields are set", func() {
-			config.Hostname = "test"
-			config.HTTPAddress = ":8080"
-			config.MetricsAddress = ":9000"
-			config.Secret = "some-secret"
-			config.DisableTLS = true
-			config.SMTPAddressIncoming = "smtp.incoming.example.com:25"
-			config.SMTPAddressOutgoing = "smtp.outgoing.example.com:587"
-			config.SMTPOutgoingMode = SMTPOutgoingModeRelay
-			config.IMAPAddress = "imap.example.com:143"
-			config.DatabaseURL = "sqlite:file.db"
+			os.Setenv("HOSTNAME", "test")
+			os.Setenv("HTTP_ADDRESS", ":8080")
+			os.Setenv("METRICS_ADDRESS", ":9000")
+			os.Setenv("SECRET", "some-secret")
+			os.Setenv("DISABLE_TLS", "true")
+			os.Setenv("SMTP_ADDRESS_INCOMING", "")
+			os.Setenv("SMTP_ADDRESS_OUTGOING", "smtp.outgoing.example.com:587")
+			os.Setenv("SMTP_OTGOING_MODE", "RELAY")
+			os.Setenv("IMAP_ADDRESS", "imap.example.com:143")
+			os.Setenv("DATABASE_URL", "sqlite:file.db")
 
-			config.ExternalRelayHostname = "smtp.external.com"
-			config.ExternalRelayPort = 587
-			config.ExternalRelayUsername = "foo"
-			config.ExternalRelayPassword = "bar"
+			config := BuildConfigFromEnv()
 
 			err := config.Validate()
 

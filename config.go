@@ -16,10 +16,13 @@ import (
 var (
 	defaultSMTPPortIncoming      = 25
 	defaultSMTPAddressIncoming   = fmt.Sprintf(":%d", defaultSMTPPortIncoming)
+	defaultSubDomainIncoming     = "mx"
 	defaultSMTPPortOutgoing      = 587
 	defaultSMTPAddressOutgoing   = fmt.Sprintf(":%d", defaultSMTPPortOutgoing)
+	defaultSubDomainOutgoing     = "smtp"
 	defaultIMAPPort              = 143
 	defaultIMAPAddress           = fmt.Sprintf(":%d", defaultIMAPPort)
+	defaultIMAPSubdomain         = "imap"
 	defaultHTTPPort              = 8080
 	defaultHTTPAddress           = fmt.Sprintf(":%d", defaultHTTPPort)
 	defaultMetricsPort           = 9000
@@ -44,6 +47,10 @@ func BuildConfigFromEnv() *Config {
 	if outgoingMode == string(SMTPOutgoingModeRelay) {
 		config.SMTPOutgoingMode = SMTPOutgoingModeRelay
 	}
+
+	config.SubDomainIncoming = getEnv("SUBDOMAIN_INCOMING", fmt.Sprintf("%s.%s", defaultSubDomainIncoming, config.Hostname))
+	config.SubDomainOutgoing = getEnv("SUBDOMAIN_OUTGOING", fmt.Sprintf("%s.%s", defaultSubDomainOutgoing, config.Hostname))
+	config.SubDomainIMAP = getEnv("SUBDOMAIN_INCOMING", fmt.Sprintf("%s.%s", defaultIMAPSubdomain, config.Hostname))
 
 	// SMTP external relay config
 	config.ExternalRelayHostname = getEnv("EXTERNAL_RELAY_HOSTNAME", "")
@@ -97,9 +104,12 @@ const (
 // Config contains all the config for serving MistralMail
 type Config struct {
 	Hostname            string
+	SubDomainIncoming   string
 	SMTPAddressIncoming string
+	SubDomainOutgoing   string
 	SMTPAddressOutgoing string
 	SMTPOutgoingMode    SMTPOutgoingMode
+	SubDomainIMAP       string
 	IMAPAddress         string
 	HTTPAddress         string
 	DatabaseURL         string
@@ -149,6 +159,18 @@ func (config *Config) Validate() error {
 
 	if config.DatabaseURL == "" {
 		return fmt.Errorf("DatabaseURL cannot be empty")
+	}
+
+	if config.SubDomainIncoming == "" {
+		return fmt.Errorf("SubDomainIncoming cannot be empty")
+	}
+
+	if config.SubDomainOutgoing == "" {
+		return fmt.Errorf("SubDomainOutgoing cannot be empty")
+	}
+
+	if config.SubDomainIMAP == "" {
+		return fmt.Errorf("SubDomainIMAP cannot be empty")
 	}
 
 	// SMTP external relay config

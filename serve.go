@@ -69,16 +69,25 @@ func Serve(config *Config) {
 	if err != nil {
 		log.Fatalf("Couldn't create certificate service: %v", err)
 	}
-	cert, err := certificates.GetOrCreateCertificate(config.Hostname)
+	// Create all the certificates
+	msaCert, err := certificates.GetOrCreateCertificate(config.SubDomainOutgoing)
 	if err != nil {
-		log.Fatalf("Couldn't create certificate: %v", err)
+		log.Fatalf("Couldn't create MSA certificate: %v", err)
+	}
+	mtaCert, err := certificates.GetOrCreateCertificate(config.SubDomainIncoming)
+	if err != nil {
+		log.Fatalf("Couldn't create MTA certificate: %v", err)
+	}
+	imapCert, err := certificates.GetOrCreateCertificate(config.SubDomainIMAP)
+	if err != nil {
+		log.Fatalf("Couldn't create IMAP certificate: %v", err)
 	}
 
 	// Run SMTP MSA
 	go func() {
 		msaConfig := config.GenerateMSAConfig()
-		msaConfig.TlsCert = cert.CertificateFile
-		msaConfig.TlsKey = cert.PrivateKeyFile
+		msaConfig.TlsCert = msaCert.CertificateFile
+		msaConfig.TlsKey = msaCert.PrivateKeyFile
 
 		msaHandlerChain := &handlers.HandlerMachanism{
 			Handlers: []handlers.Handler{
@@ -94,7 +103,7 @@ func Serve(config *Config) {
 			<-sigc
 			msa.Stop()
 		}()
-		err := msa.ListenAndServe()
+		err = msa.ListenAndServe()
 		if err != nil {
 			log.Errorln(err)
 		}
@@ -103,16 +112,16 @@ func Serve(config *Config) {
 	// Run IMAP
 	go func() {
 		imapConfig := config.GenerateIMAPBackendConfig()
-		imapConfig.TlsCert = cert.CertificateFile
-		imapConfig.TlsKey = cert.PrivateKeyFile
+		imapConfig.TlsCert = imapCert.CertificateFile
+		imapConfig.TlsKey = imapCert.PrivateKeyFile
 
 		imap.Serve(imapConfig, backend.IMAPBackend)
 	}()
 
 	// Run SMTP MTA
 	mtaConfig := config.GenerateMTAConfig()
-	mtaConfig.TlsCert = cert.CertificateFile
-	mtaConfig.TlsKey = cert.PrivateKeyFile
+	mtaConfig.TlsCert = mtaCert.CertificateFile
+	mtaConfig.TlsKey = mtaCert.PrivateKeyFile
 
 	mtaHandlerChain := &handlers.HandlerMachanism{
 		Handlers: []handlers.Handler{
