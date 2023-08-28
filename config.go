@@ -90,6 +90,9 @@ func BuildConfigFromEnv() *Config {
 	// Metrics
 	config.MetricsAddress = getEnv("METRICS_ADDRESS", defaultMetricsAddress)
 
+	// Sentry
+	config.SentryDSN = getEnv("SENTRY_DSN", "")
+
 	return config
 }
 
@@ -115,6 +118,7 @@ type Config struct {
 	DatabaseURL         string
 	Secret              string
 	MetricsAddress      string
+	SentryDSN           string
 
 	DisableTLS               bool
 	TLSCertificatesDirectory string

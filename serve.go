@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/evalphobia/logrus_sentry"
 	"github.com/mistralmail/imap"
 	"github.com/mistralmail/mistralmail/api"
 	"github.com/mistralmail/mistralmail/backend"
@@ -24,6 +25,21 @@ import (
 func Serve(config *Config) {
 
 	log.SetLevel(log.DebugLevel)
+
+	// Sentry
+	if config.SentryDSN != "" {
+		hook, err := logrus_sentry.NewSentryHook(config.SentryDSN, []log.Level{
+			log.PanicLevel,
+			log.FatalLevel,
+			log.ErrorLevel,
+		})
+
+		if err == nil {
+			log.AddHook(hook)
+		}
+	}
+
+	log.Errorln("test!")
 
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
