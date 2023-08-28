@@ -39,8 +39,6 @@ func Serve(config *Config) {
 		}
 	}
 
-	log.Errorln("test!")
-
 	sigc := make(chan os.Signal, 1)
 	signal.Notify(sigc, os.Interrupt, syscall.SIGTERM)
 
