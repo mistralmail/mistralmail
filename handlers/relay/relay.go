@@ -44,7 +44,17 @@ type Relay struct {
 // Handle handles the state.
 func (handler *Relay) Handle(state *smtp.State) error {
 
-	err := handler.SendMail(state.From.Address, state.To[0].Address, state.Data)
+	recipients := make([]string, len(state.To))
+
+	for i, to := range state.To {
+		if to == nil {
+			// maybe this shouldn't even be a pointer at all?
+			return fmt.Errorf("state.To cannot be nil")
+		}
+		recipients[i] = to.Address
+	}
+
+	err := handler.SendMail(state.From.Address, recipients, state.Data)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Ip":        state.Ip.String(),
@@ -73,7 +83,7 @@ func (handler *Relay) Handle(state *smtp.State) error {
 // SendMail sends an SMTP message with a given from and to mail address.
 // code partially copy pasted from the net/smtp package to allow setting a custom TLS config.
 // should be moved to the SMTP package
-func (handler *Relay) SendMail(from string, to string, message []byte) error {
+func (handler *Relay) SendMail(from string, recipients []string, message []byte) error {
 
 	// Connect to the SMTP server without TLS
 	smtpAddress := fmt.Sprintf("%s:%d", handler.relayHostname, handler.relayPort)
@@ -107,9 +117,12 @@ func (handler *Relay) SendMail(from string, to string, message []byte) error {
 	if err != nil {
 		return fmt.Errorf("failed to set the sender: %w", err)
 	}
-	err = conn.Rcpt(to)
-	if err != nil {
-		return fmt.Errorf("failed to set the recipient: %w", err)
+
+	for _, to := range recipients {
+		err = conn.Rcpt(to)
+		if err != nil {
+			return fmt.Errorf("failed to set the recipient: %w", err)
+		}
 	}
 
 	// Send the email
