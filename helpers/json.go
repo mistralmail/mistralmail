@@ -1,9 +1,10 @@
 package helpers
 
-import "encoding/json"
-import "errors"
-import "io/ioutil"
-import "os"
+import (
+	"encoding/json"
+	"errors"
+	"os"
+)
 
 // DecodeFile is a more generic JSON parser
 func DecodeFile(fileName string, object interface{}) error {
@@ -34,7 +35,7 @@ func EncodeFile(fileName string, object interface{}) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(fileName, json, 0644)
+	err = os.WriteFile(fileName, json, 0644)
 	if err != nil {
 		return errors.New("Couldn't write JSON to disk: " + err.Error())
 	}
