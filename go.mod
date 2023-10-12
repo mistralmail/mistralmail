@@ -13,7 +13,7 @@ require (
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/mistralmail/gospf v0.0.0-20230816151716-f0afe66cc671
-	github.com/mistralmail/imap v0.0.0-20231012183132-179fc2722ea5 // indirect
+	github.com/mistralmail/imap v0.0.0-20231012183132-179fc2722ea5
 	github.com/mistralmail/smtp v0.0.0-20231012185021-68467a296bd0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_model v0.3.0
@@ -30,3 +30,4 @@ require (
 	gorm.io/gorm v1.25.5
 
 )
+
