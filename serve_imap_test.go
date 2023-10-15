@@ -2,6 +2,7 @@ package mistralmail
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -12,18 +13,14 @@ import (
 	"github.com/mistralmail/imap"
 	"github.com/mistralmail/mistralmail/backend"
 	. "github.com/smartystreets/goconvey/convey"
-	"github.com/stretchr/testify/suite"
 )
-
-type ServerSuite struct {
-	suite.Suite
-	client  *client.Client
-	backend *backend.Backend
-}
 
 var (
 	address  = "localhost:143"
 	testDB   = "serve_imap_test.db"
+	inbox    = "INBOX"
+	message  = []byte("From: sender@example.com\r\nTo: recipient@example.com\r\nSubject: Test Message\r\n\r\nHello, this is a test message.\r\n")
+	date     = time.Now()
 	testUser = struct {
 		Email    string
 		Password string
@@ -219,6 +216,72 @@ func TestIMAPServer(t *testing.T) {
 					})
 				})
 
+				Convey("When appending a message to the inbox and getting it again and deleting one of them", func() {
+
+					// Select mailbox
+					_, err = imapClient.Select(inbox, false)
+					So(err, ShouldBeNil)
+
+					flags := []string{goimap.SeenFlag}
+
+					// Append two messages
+					err = imapClient.Append(inbox, flags, date, convertToLiteral(message))
+					So(err, ShouldBeNil)
+
+					err = imapClient.Append(inbox, flags, date, convertToLiteral(message))
+					So(err, ShouldBeNil)
+
+					// Fetch those two messages again
+					seqSet := new(goimap.SeqSet)
+					seqSet.AddRange(1, 2)
+
+					messages := make(chan *goimap.Message, 2)
+					done := make(chan error, 1)
+
+					go func() {
+						done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchAll}, messages)
+					}()
+
+					err = <-done
+					So(err, ShouldBeNil)
+
+					So(len(messages), ShouldEqual, 2)
+
+					msg := <-messages
+
+					So(msg, ShouldNotBeNil)
+					So(msg.Envelope.Subject, ShouldEqual, "Test Message")
+
+					msg2 := <-messages
+
+					So(msg2, ShouldNotBeNil)
+					So(msg2.Envelope.Subject, ShouldEqual, "Test Message")
+
+					// Check the number of messages in the mailbox
+					status, err := imapClient.Status(inbox, []goimap.StatusItem{goimap.StatusMessages})
+					So(err, ShouldBeNil)
+					So(status.Messages, ShouldEqual, 2)
+
+					// Delete the message
+					seqNum := msg.SeqNum
+					deletedSeqSet := new(goimap.SeqSet)
+					deletedSeqSet.AddNum(seqNum)
+
+					flags2 := []interface{}{goimap.SeenFlag, goimap.DeletedFlag}
+					err = imapClient.Store(deletedSeqSet, goimap.AddFlags, flags2, nil)
+					So(err, ShouldBeNil)
+
+					// Expunge to permanently delete the message
+					err = imapClient.Expunge(nil)
+					So(err, ShouldBeNil)
+
+					// Check the number of messages in the mailbox
+					status, err = imapClient.Status(inbox, []goimap.StatusItem{goimap.StatusMessages})
+					So(err, ShouldBeNil)
+					So(status.Messages, ShouldEqual, 1)
+
+				})
+
 			})
 
 		})
@@ -251,4 +314,25 @@ func connectWithRetry(address string, maxSeconds int) error {
 
 func isConnectionRefused(err error) bool {
 	return strings.Contains(err.Error(), "refused")
+}
+
+type byteLiteral struct {
+	data []byte
+}
+
+func (bl *byteLiteral) Read(p []byte) (n int, err error) {
+	if len(bl.data) == 0 {
+		return 0, io.EOF
+	}
+	n = copy(p, bl.data)
+	bl.data = bl.data[n:]
+	return n, nil
+}
+
+func (bl *byteLiteral) Len() int {
+	return len(bl.data)
+}
+
+func convertToLiteral(data []byte) goimap.Literal {
+	return &byteLiteral{data: data}
 }

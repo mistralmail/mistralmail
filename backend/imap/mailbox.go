@@ -502,7 +502,10 @@ func (mbox *IMAPMailbox) Expunge() error {
 
 		if deleted {
 			err := mbox.messageRepo.DeleteMessageByID(msg.ID)
-			return fmt.Errorf("couldn't delete message: %v", err)
+			if err != nil {
+				return fmt.Errorf("couldn't delete message: %v", err)
+			}
+
 		}
 	}
 
