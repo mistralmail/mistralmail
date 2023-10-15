@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	address  = "localhost:143"
+	address  = "localhost:1430"
 	testDB   = "serve_imap_test.db"
 	inbox    = "INBOX"
 	message  = []byte("From: sender@example.com\r\nTo: recipient@example.com\r\nSubject: Test Message\r\n\r\nHello, this is a test message.\r\n")
@@ -36,6 +36,7 @@ func TestIMAPServer(t *testing.T) {
 	config := Config{
 		DatabaseURL: fmt.Sprintf("sqlite:%s", testDB),
 		DisableTLS:  true,
+		IMAPAddress: address,
 	}
 
 	var imapClient *client.Client
@@ -47,9 +48,12 @@ func TestIMAPServer(t *testing.T) {
 	}
 
 	defer func() {
-		imapClient.Logout()
+		err := imapClient.Logout()
+		if err != nil {
+			t.Logf("%v", err)
+		}
 		backend.Close()
-		err := os.Remove(testDB)
+		err = os.Remove(testDB)
 		if err != nil {
 			t.Errorf("%v", err)
 		}
