@@ -1,4 +1,4 @@
-![](.github/workflows/mistralmail128.png)
+![](.github/assets/mistralmail128.png)
 
 # MistralMail
 
@@ -16,10 +16,10 @@ MistralMail will not be able to generate TLS certificates without a correct DNS 
 
 You need the following DNS records:
 
-- A record pointing to your MistralMail server ip.
-
-- MX record point to your MistralMail server ip.
-
+- A record `imap.yourdomain.com` pointing to your MistralMail server ip.
+- A record `mx.yourdomain.com` pointing to your MistralMail server ip.
+- A record `smtp.yourdomain.com` pointing to your MistralMail server ip.
+- MX record point to `mx.yourdomain.com`.
 - SPF record pointing to your SMTP relay provider.
 
 ### Running the MistralMail server
@@ -50,13 +50,24 @@ Now you can create a user with the MistralMail CLI.
 
 MistralMail exposes the following ports:
 
-- 25 for all incoming SMTP emails (MTA)
+- `25` for all incoming SMTP emails (MTA)
 
-- 587 for all outing SMTP emails (MSA)
+- `587` for all outing SMTP emails (MSA)
 
-- 143 for IMAP
+- `143` for IMAP
 
-- 443 & 80 for Let's Encrypt
+- `443` & `80` for Let's Encrypt
+
+- `9000` for the metrics
+
+- `8080` for the api & web server
+
+### Using the MistralMail Web UI
+
+MistralMail comes with a basic web ui `http://localhost:8080`.
+At the moment it supports nothing more than basic user management and basic statistics.
+
+![mistralmail-web-ui](.github/assets/mistralmail-web-ui.png)
 
 ### Using the MistralMail command line interface
 
@@ -82,7 +93,7 @@ Currently the CLI contains the following commands:
 
 **IMAP:**
 
-- **Server address:** your domain name
+- **Server address:** `imap.yourdomain.com`
 
 - **Username:** your email address
 
@@ -94,7 +105,7 @@ Currently the CLI contains the following commands:
 
 **SMTP:**
 
-- **Server address:** your domain name
+- **Server address:** `smtp.yourdomain.com`
 
 - **Username:** your email address
 
@@ -138,13 +149,13 @@ This backend is very experimental and surely contains a lot of bug. The backend 
 
 We dump the complete emails in the database at this moment. In the future we would like to add support for object storage for the actual mail bodies. But that's nothing for the near future.
 
-## Webmail
+### Webmail
 
 Currently there are no concrete plans to implement a webmail. But wouldn't it be nice to have it someday?
 
 ### Web management
 
-Instead of configuring everything via a CLI, we'd like to add an admin dashboard on which you can easily configure everything. Checking DNS records, checking state of the server, metrics, managing users, ...
+Instead of configuring everything via a CLI, it's also possible to use the very basic web ui. But this is still very basic.
 
 ### SPAM
 
