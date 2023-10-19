@@ -1,6 +1,8 @@
 package certificates
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,6 +24,8 @@ type Config struct {
 type CertificateService struct {
 	config       *Config
 	certificates map[string]*CertificateResource
+	privateKey   *rsa.PrivateKey
+	acmeHelper   *ACMEHelper
 }
 
 // NewCertificateService creates a new CertificateService with the given config parameters and load the existing certificates from disk.
@@ -48,6 +52,20 @@ func NewCertificateService(certificateStoreDirectory string, acmeEndpoint string
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialize certificate service with certificates from disk: %w", err)
 	}
+
+	// Load private key
+	_, err = certificateStore.GetOrGeneratePrivateKey()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get or generate private key: %w", err)
+	}
+
+	// Initialize the ACME helper
+	acmeHelper, err := NewACMEHelper(certificateStore.privateKey, acmeEmail, acmeEndpoint, certificateStore.config.AcmeHttpPort, certificateStore.config.AcmeTlsPort)
+	if err != nil {
+		return nil, err
+	}
+	certificateStore.acmeHelper = acmeHelper
+
 	return certificateStore, nil
 }
 
@@ -80,7 +98,7 @@ func (s *CertificateService) GetOrCreateCertificate(domain string) (*Certificate
 		return cert, nil
 	}
 
-	cert, err = generateCertificateWithACMEChallenge(domain, s.config.AcmeEmail, s.config.AcmeEndpoint, s.config.AcmeHttpPort, s.config.AcmeTlsPort)
+	cert, err = s.acmeHelper.generateCertificateWithACMEChallenge(domain)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create certificate: %w", err)
 	}
@@ -94,6 +112,33 @@ func (s *CertificateService) GetOrCreateCertificate(domain string) (*Certificate
 
 }
 
+// GetOrGeneratePrivateKey gets the private key from the store or generates and saves a new one.
+func (s *CertificateService) GetOrGeneratePrivateKey() (*rsa.PrivateKey, error) {
+	if s.privateKey != nil {
+		return s.privateKey, nil
+	}
+
+	key, err := s.generatePrivateKey()
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate private key: %w", err)
+	}
+	s.privateKey = key
+
+	return key, nil
+}
+
+// generatePrivateKey generates a private key.
+func (s *CertificateService) generatePrivateKey() (*rsa.PrivateKey, error) {
+	return rsa.GenerateKey(rand.Reader, 2048)
+}
+
+// certificatesFile is a helper struct to save the private key and the certificates to disk.
+type certificatesFile struct {
+	Certificates map[string]*CertificateResource
+	PrivateKey   *rsa.PrivateKey
+}
+
+// saveCertificatesToFile saves the certificates and the private key to disk.
 func (s *CertificateService) saveCertificatesToFile() error {
 
 	for domain, cert := range s.certificates {
@@ -112,7 +157,12 @@ func (s *CertificateService) saveCertificatesToFile() error {
 		cert.PrivateKeyFile = keyFileName
 	}
 
-	jsonData, err := json.MarshalIndent(s.certificates, "", "\t")
+	certificatesFile := certificatesFile{
+		Certificates: s.certificates,
+		PrivateKey:   s.privateKey,
+	}
+
+	jsonData, err := json.MarshalIndent(certificatesFile, "", "\t")
 	if err != nil {
 		return fmt.Errorf("error marshaling JSON: %w", err)
 	}
@@ -125,6 +175,7 @@ func (s *CertificateService) saveCertificatesToFile() error {
 	return nil
 }
 
+// loadCertificatesFromFile loads the certificates and the private key from disk.
 func (s *CertificateService) loadCertificatesFromFile() error {
 
 	jsonData, err := os.ReadFile(s.config.CertificateStoreDirectory + certsFile)
@@ -132,10 +183,17 @@ func (s *CertificateService) loadCertificatesFromFile() error {
 		return fmt.Errorf("error reading file: %w", err)
 	}
 
-	err = json.Unmarshal(jsonData, &s.certificates)
+	certificatesFile := &certificatesFile{
+		Certificates: map[string]*CertificateResource{},
+	}
+
+	err = json.Unmarshal(jsonData, certificatesFile)
 	if err != nil {
 		return fmt.Errorf("error unmarshaling JSON: %w", err)
 	}
+
+	s.certificates = certificatesFile.Certificates
+	s.privateKey = certificatesFile.PrivateKey
 
 	return nil
 }

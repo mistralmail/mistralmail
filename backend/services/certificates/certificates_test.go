@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 const testDir = "./"
@@ -15,14 +15,25 @@ func TestAddAndGetCertificate(t *testing.T) {
 	defer os.Remove(testDir + "/example.com.cert.pem")
 	defer os.Remove(testDir + "/example.com.private.key")
 
-	service, err := NewCertificateService(testDir, "test_endpoint", "test_email")
-	require.NoError(t, err)
+	Convey("Add and Get certificates and save them to disk", t, func() {
 
-	certData := &CertificateResource{ /* Initialize certificate data */ }
-	err = service.Add("example.com", certData)
-	require.NoError(t, err)
+		service := CertificateService{
+			config: &Config{
+				CertificateStoreDirectory: testDir,
+			},
+			certificates: map[string]*CertificateResource{},
+		}
 
-	cert, err := service.Get("example.com")
-	require.NoError(t, err)
-	require.Equal(t, certData, cert)
+		certData := &CertificateResource{
+			Domain: "example.com",
+		}
+		err := service.Add("example.com", certData)
+		So(err, ShouldBeNil)
+
+		cert, err := service.Get("example.com")
+		So(err, ShouldBeNil)
+		So(certData, ShouldEqual, cert)
+
+	})
+
 }

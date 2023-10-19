@@ -2,9 +2,6 @@ package certificates
 
 import (
 	"crypto"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"fmt"
 
 	"github.com/go-acme/lego/v4/certcrypto"
@@ -15,55 +12,92 @@ import (
 	"github.com/go-acme/lego/v4/registration"
 )
 
-// generateCertificateWithACMEChallenge obtains certificates using LEGO.
-func generateCertificateWithACMEChallenge(domain string, acmeEmail string, acmeEndpoint string, acmeHttpPort string, acmeHttpsPort string) (*CertificateResource, error) {
+// ACMEHelper is a helper struct that handles the registration of the user and the creation of certificates.
+type ACMEHelper struct {
+	user   acmeUser
+	config *lego.Config
+	client *lego.Client
+}
 
-	// Create a user. New accounts need an email and private key to start.
-	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't generate private key: %w", err)
+// NewACMEHelper creates a new ACMEHelper and gets or registers the user.
+func NewACMEHelper(acmePrivateKey crypto.PrivateKey, acmeEmail string, acmeEndpoint string, acmeHttpPort string, acmeHttpsPort string) (*ACMEHelper, error) {
+
+	helper := &ACMEHelper{
+		user: acmeUser{
+			Email: acmeEmail,
+			key:   acmePrivateKey,
+		},
 	}
 
-	myUser := acmeUser{
-		Email: acmeEmail,
-		key:   privateKey,
-	}
-
-	config := lego.NewConfig(&myUser)
+	helper.config = lego.NewConfig(&helper.user)
 
 	// This CA URL is configured for a local dev instance of Boulder running in Docker in a VM.
-	config.CADirURL = acmeEndpoint
-	config.Certificate.KeyType = certcrypto.RSA2048
+	helper.config.CADirURL = acmeEndpoint
+	helper.config.Certificate.KeyType = certcrypto.RSA2048
 
 	// A client facilitates communication with the CA server.
-	client, err := lego.NewClient(config)
+	c, err := lego.NewClient(helper.config)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create ACME client: %w", err)
 	}
+	helper.client = c
 
 	// Setup client
-	err = client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", acmeHttpPort))
+	err = helper.client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", acmeHttpPort))
 	if err != nil {
 		return nil, fmt.Errorf("couldn't set http provider: %w", err)
 	}
-	err = client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", acmeHttpsPort))
+	err = helper.client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", acmeHttpsPort))
 	if err != nil {
 		return nil, fmt.Errorf("couldn't set tls provider: %w", err)
 	}
 
-	// New users will need to register
-	reg, err := client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
+	err = helper.getOrCreateUserRegistration()
 	if err != nil {
-		return nil, fmt.Errorf("couldn't set register user: %w", err)
+		return nil, err
 	}
-	myUser.Registration = reg
+
+	return helper, nil
+
+}
+
+// getOrCreateUserRegistration tries to get a user registration based on the private key.
+// if nothing is returned it creates a new registration.
+func (helper *ACMEHelper) getOrCreateUserRegistration() error {
+
+	reg, err := helper.client.Registration.ResolveAccountByKey()
+	if err != nil {
+		reg, err = helper.client.Registration.Register(registration.RegisterOptions{TermsOfServiceAgreed: true})
+		if err != nil {
+			return fmt.Errorf("couldn't register user: %w", err)
+		}
+	}
+
+	helper.user.Registration = reg
+
+	return nil
+}
+
+// generateCertificateWithACMEChallenge generates a new certificate for the given domain.
+// the ACMEHelper must be initialized before using this function.
+func (helper *ACMEHelper) generateCertificateWithACMEChallenge(domain string) (*CertificateResource, error) {
+
+	// Check if initialized
+	if helper.client == nil || helper.config == nil {
+		return nil, fmt.Errorf("acme helper not initialized")
+	}
+
+	// Check if user registered
+	if helper.user.Registration == nil {
+		return nil, fmt.Errorf("user registration not set")
+	}
 
 	// Generate certificate
 	request := certificate.ObtainRequest{
 		Domains: []string{domain},
 		Bundle:  true,
 	}
-	certificates, err := client.Certificate.Obtain(request)
+	certificates, err := helper.client.Certificate.Obtain(request)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't obtain certificate: %w", err)
 	}
