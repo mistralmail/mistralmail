@@ -46,7 +46,7 @@ func New(dbURL string) (*Backend, error) {
 		return nil, fmt.Errorf("couldn't create message repo: %w", err)
 	}
 
-	loginAttempts, err := loginattempts.New(loginattempts.DefaultMaxAttempts)
+	loginAttempts, err := loginattempts.New(loginattempts.DefaultMaxAttempts, loginattempts.DefaultBlockDuration)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create login attempts service: %w", err)
 	}

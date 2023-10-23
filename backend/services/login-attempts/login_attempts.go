@@ -1,19 +1,26 @@
 package loginattempts
 
+import "time"
+
 // DefaultMaxAttempts denotes the default max attempts after which to block.
 const DefaultMaxAttempts uint = 5
 
+// DefaultBlockDuration denotes the default time-out during which ip addresses are blocked.
+const DefaultBlockDuration = 2 * time.Hour
+
 // LoginAttempts is a small service that counts/checks the number of failed log-in attempts.
 type LoginAttempts struct {
-	attemptsPerAddress map[string]uint
+	attemptsPerAddress map[string]*attemptsInfo
 	maxAttempts        uint
+	blockDuration      time.Duration
 }
 
 // New creates a new LoginAttempts service.
-func New(maxAttempts uint) (*LoginAttempts, error) {
+func New(maxAttempts uint, blockDuration time.Duration) (*LoginAttempts, error) {
 	return &LoginAttempts{
-		attemptsPerAddress: map[string]uint{},
+		attemptsPerAddress: map[string]*attemptsInfo{},
 		maxAttempts:        maxAttempts,
+		blockDuration:      blockDuration,
 	}, nil
 }
 
@@ -24,7 +31,13 @@ func (l *LoginAttempts) CanLogin(ipAddress string) (bool, error) {
 	if !ok {
 		return true, nil
 	}
-	if attempts < l.maxAttempts {
+
+	if time.Since(attempts.lastAttempt) > l.blockDuration {
+		attempts.reset()
+		return true, nil
+	}
+
+	if attempts.numberOfAttempts < l.maxAttempts {
 		return true, nil
 	}
 
@@ -36,10 +49,10 @@ func (l *LoginAttempts) AddFailedAttempts(ipAddress string) (uint, error) {
 
 	attempts, ok := l.attemptsPerAddress[ipAddress]
 	if !ok {
-		l.attemptsPerAddress[ipAddress] = 1
+		l.attemptsPerAddress[ipAddress] = newAttemptsInfo(ipAddress)
 	} else {
-		l.attemptsPerAddress[ipAddress] = attempts + 1
+		attempts.increment()
 	}
 
-	return attempts + 1, nil
+	return l.attemptsPerAddress[ipAddress].numberOfAttempts, nil
 }

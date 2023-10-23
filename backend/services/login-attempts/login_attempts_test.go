@@ -2,6 +2,7 @@ package loginattempts
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -10,7 +11,7 @@ func TestLoginAttempts(t *testing.T) {
 	// Test New function
 	t.Run("TestNew", func(t *testing.T) {
 		maxAttempts := uint(5)
-		la, err := New(maxAttempts)
+		la, err := New(maxAttempts, DefaultBlockDuration)
 		assert.NoError(t, err)
 		assert.NotNil(t, la)
 		assert.Equal(t, maxAttempts, la.maxAttempts)
@@ -19,7 +20,7 @@ func TestLoginAttempts(t *testing.T) {
 
 	// Test CanLogin function
 	t.Run("TestCanLogin", func(t *testing.T) {
-		la, err := New(DefaultMaxAttempts)
+		la, err := New(DefaultMaxAttempts, 400*time.Millisecond)
 		assert.NoError(t, err)
 
 		// Test with a new IP address
@@ -40,11 +41,18 @@ func TestLoginAttempts(t *testing.T) {
 		canLogin, err = la.CanLogin("192.168.0.3")
 		assert.NoError(t, err)
 		assert.True(t, canLogin)
+
+		// Test again after wait time.
+		time.Sleep(500 * time.Millisecond)
+
+		canLogin, err = la.CanLogin("192.168.0.2")
+		assert.NoError(t, err)
+		assert.True(t, canLogin)
 	})
 
 	// Test AddFailedAttempts function
 	t.Run("TestAddFailedAttempts", func(t *testing.T) {
-		la, err := New(DefaultMaxAttempts)
+		la, err := New(DefaultMaxAttempts, DefaultBlockDuration)
 		assert.NoError(t, err)
 
 		// Test adding failed attempts for a new IP address
