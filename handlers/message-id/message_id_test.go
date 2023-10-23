@@ -49,4 +49,40 @@ This is the body of the email.`
 
 	})
 
+	Convey("Message-ID handler should not override an existing Message-ID", t, func() {
+
+		message := `From: sender@example.com
+To: recipient@example.com
+Message-ID: <some-id@example.com>
+Subject: Test Subject
+
+This is the body of the email.`
+
+		c := server.Config{
+			Hostname: "some.mail.server.example.com",
+			Ip:       "192.168.0.11",
+		}
+
+		state := smtp.State{
+			From:     &smtp.MailAddress{Address: "from@test.com"},
+			To:       []*smtp.MailAddress{{Address: "to@test.com"}},
+			Data:     []byte(message),
+			Ip:       net.ParseIP("192.168.0.10"),
+			Hostname: "mail.example.com",
+		}
+
+		h := New(&c)
+		err := h.Handle(&state)
+		So(err, ShouldEqual, nil)
+
+		So(err, ShouldEqual, nil)
+
+		parsedMessage, err := mail.ReadMessage(strings.NewReader(string(state.Data)))
+		So(err, ShouldEqual, nil)
+
+		So(parsedMessage.Header.Get("Message-ID"), ShouldNotBeEmpty)
+		So(parsedMessage.Header.Get("Message-ID"), ShouldContainSubstring, "some-id@example.com")
+
+	})
+
 }

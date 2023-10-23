@@ -2,6 +2,8 @@ package messageid
 
 import (
 	"fmt"
+	"net/mail"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/mistralmail/smtp/server"
@@ -39,6 +41,21 @@ func (handler *MessageID) Handle(state *smtp.State) error {
 	// form on the left-hand side of the "@" and does not have internal CFWS
 	// anywhere in the message identifier.
 
+	// Only set if message-id not yet provided.
+	parsedMessage, err := mail.ReadMessage(strings.NewReader(string(state.Data)))
+	if err != nil {
+		return err
+	}
+	if parsedMessage.Header.Get("Message-ID") != "" {
+		log.WithFields(log.Fields{
+			"Ip":        state.Ip.String(),
+			"SessionId": state.SessionId.String(),
+			"Hostname":  state.Hostname,
+		}).Debug("No 'Message-ID' added since it was already set.")
+		return nil
+	}
+
+	// Set the message id
 	headerKey := "Message-ID"
 
 	headerValue := fmt.Sprintf("<%s@%s>", uuid.New(), handler.config.Hostname)
