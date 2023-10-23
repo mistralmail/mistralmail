@@ -12,7 +12,7 @@ require (
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/mistralmail/gospf v0.0.0-20230816151716-f0afe66cc671
 	github.com/mistralmail/imap v0.0.0-20231012193413-fe3956302cdc
-	github.com/mistralmail/smtp v0.0.0-20231016201722-1401879043fc
+	github.com/mistralmail/smtp v0.0.0-20231023181013-349c1a74a2a8
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_model v0.3.0
 	github.com/sirupsen/logrus v1.9.3
