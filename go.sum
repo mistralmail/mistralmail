@@ -42,6 +42,8 @@ github.com/golang/protobuf v1.5.3/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiu
 github.com/google/go-cmp v0.5.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
+github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
+github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 h1:EGx4pi6eqNxGaHF6qqu48+N2wcFQ5qg5FXgOdqsJ5d8=
 github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
@@ -84,12 +86,6 @@ github.com/mistralmail/gospf v0.0.0-20230816151716-f0afe66cc671 h1:X1acmnAXjIU25
 github.com/mistralmail/gospf v0.0.0-20230816151716-f0afe66cc671/go.mod h1:M/VZfrMy4xzEl1/g7GQcEcXgG7PiSYj6FUgW1mvVNgs=
 github.com/mistralmail/imap v0.0.0-20231012193413-fe3956302cdc h1:fmL4iATp5V49Ftgr+SUxY+MHZ/qLl9HJmUzJ4Pu0vTM=
 github.com/mistralmail/imap v0.0.0-20231012193413-fe3956302cdc/go.mod h1:ZzkEBEuM5o4hRpU5WU68ZKGviaUyUctYBqslnu0CiyM=
-github.com/mistralmail/smtp v0.0.0-20231012195125-7c0bb0def3b8 h1:a6iB5kPJN+a7lSXx9p9pAoe83vbsceumj8MvDB+D6cw=
-github.com/mistralmail/smtp v0.0.0-20231012195125-7c0bb0def3b8/go.mod h1:dRc2pKBvnz46UvSRfnvJllS7PHjaESMTKcCAEZH6S4M=
-github.com/mistralmail/smtp v0.0.0-20231014210821-2fd9aff73c55 h1:w8frqCtC0Wm8hMazHIUHoq+FQcGjul7WZnLO8tMDDMk=
-github.com/mistralmail/smtp v0.0.0-20231014210821-2fd9aff73c55/go.mod h1:dRc2pKBvnz46UvSRfnvJllS7PHjaESMTKcCAEZH6S4M=
-github.com/mistralmail/smtp v0.0.0-20231016201722-1401879043fc h1:MROU2roV+VYY0bDKU377N5pzmt0eIxUjEX1awKo13YQ=
-github.com/mistralmail/smtp v0.0.0-20231016201722-1401879043fc/go.mod h1:dRc2pKBvnz46UvSRfnvJllS7PHjaESMTKcCAEZH6S4M=
 github.com/mistralmail/smtp v0.0.0-20231023181013-349c1a74a2a8 h1:/q95FkrT+ESMtU5TAmdX18P4hA7ViMBcQZtYsP8s/8c=
 github.com/mistralmail/smtp v0.0.0-20231023181013-349c1a74a2a8/go.mod h1:dRc2pKBvnz46UvSRfnvJllS7PHjaESMTKcCAEZH6S4M=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=

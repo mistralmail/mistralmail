@@ -8,6 +8,7 @@ require (
 	github.com/evalphobia/logrus_sentry v0.8.2
 	github.com/go-acme/lego/v4 v4.13.3
 	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/google/uuid v1.3.0
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/mistralmail/gospf v0.0.0-20230816151716-f0afe66cc671

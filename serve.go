@@ -13,6 +13,7 @@ import (
 	"github.com/mistralmail/mistralmail/backend/services/certificates"
 	"github.com/mistralmail/mistralmail/handlers"
 	imaphandler "github.com/mistralmail/mistralmail/handlers/imap"
+	messageid "github.com/mistralmail/mistralmail/handlers/message-id"
 	"github.com/mistralmail/mistralmail/handlers/received"
 	"github.com/mistralmail/mistralmail/handlers/relay"
 	"github.com/mistralmail/mistralmail/handlers/spf"
@@ -111,6 +112,7 @@ func Serve(config *Config) {
 		msaHandlerChain := &handlers.HandlerMachanism{
 			Handlers: []handlers.Handler{
 				received.New(msaConfig),
+				messageid.New(msaConfig),
 				relay.New(config.ExternalRelayHostname, config.ExternalRelayPort, config.ExternalRelayUsername, config.ExternalRelayPassword, config.ExternalRelayInsecureSkipVerify),
 			},
 		}
