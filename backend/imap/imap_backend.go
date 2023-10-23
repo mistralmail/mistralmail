@@ -6,8 +6,8 @@ import (
 
 	"github.com/emersion/go-imap"
 	"github.com/emersion/go-imap/backend"
-	loginattempts "github.com/mistralmail/mistralmail/backend/login-attempts"
 	"github.com/mistralmail/mistralmail/backend/models"
+	loginattempts "github.com/mistralmail/mistralmail/backend/services/login-attempts"
 
 	log "github.com/sirupsen/logrus"
 )

@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	imapbackend "github.com/mistralmail/mistralmail/backend/imap"
-	loginattempts "github.com/mistralmail/mistralmail/backend/login-attempts"
 	"github.com/mistralmail/mistralmail/backend/models"
+	loginattempts "github.com/mistralmail/mistralmail/backend/services/login-attempts"
 	smtpbackend "github.com/mistralmail/mistralmail/backend/smtp"
 	"gorm.io/gorm"
 )

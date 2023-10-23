@@ -3,8 +3,8 @@ package smtpbackend
 import (
 	"fmt"
 
-	loginattempts "github.com/mistralmail/mistralmail/backend/login-attempts"
 	"github.com/mistralmail/mistralmail/backend/models"
+	loginattempts "github.com/mistralmail/mistralmail/backend/services/login-attempts"
 	"github.com/mistralmail/smtp/server"
 	"github.com/mistralmail/smtp/smtp"
 )
