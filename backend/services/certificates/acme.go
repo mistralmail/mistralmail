@@ -2,6 +2,7 @@ package certificates
 
 import (
 	"crypto"
+	"crypto/x509"
 	"fmt"
 
 	"github.com/go-acme/lego/v4/certcrypto"
@@ -123,12 +124,34 @@ func (helper *ACMEHelper) GenerateCertificateWithACMEChallenge(domain string) (*
 		CSR:               certificates.CSR,
 	}
 
+	// TODO: this should be better and in another function...
+	// way too much boilerplate to extract the certificate expiration date!
 	tlsCert, err := certificateResourceToCertificate(certificateResource)
 	if err != nil {
 		return nil, fmt.Errorf("obtained certificate not valid: %w", err)
 	}
 
-	certificateResource.NotValidAfter = tlsCert.Leaf.NotAfter
+	if len(tlsCert.Certificate) == 0 {
+		return nil, fmt.Errorf("obtained certificate empty: %w", err)
+	}
+
+	var x509Cert *x509.Certificate
+
+	for _, cert := range tlsCert.Certificate {
+		x509Cert, err = x509.ParseCertificate(cert)
+		if err != nil {
+			return nil, fmt.Errorf("obtained sub certificate not valid: %w", err)
+		}
+		if x509Cert.Subject.CommonName == domain {
+			break
+		}
+	}
+
+	if x509Cert == nil {
+		return nil, fmt.Errorf("obtained certificate not for domain: %s", err)
+	}
+
+	certificateResource.NotValidAfter = x509Cert.NotAfter
 
 	return certificateResource, nil
 
