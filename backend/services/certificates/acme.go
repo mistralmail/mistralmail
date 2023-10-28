@@ -9,8 +9,17 @@ import (
 	"github.com/go-acme/lego/v4/challenge/http01"
 	"github.com/go-acme/lego/v4/challenge/tlsalpn01"
 	"github.com/go-acme/lego/v4/lego"
+	legolog "github.com/go-acme/lego/v4/log"
 	"github.com/go-acme/lego/v4/registration"
+	log "github.com/sirupsen/logrus"
 )
+
+// ACME is a small interface that handles the creation of certificates.
+type ACME interface {
+	// GenerateCertificateWithACMEChallenge generates a new certificate for the given domain.
+	// the ACMEHelper must be initialized before using this function.
+	GenerateCertificateWithACMEChallenge(domain string) (*CertificateResource, error)
+}
 
 // ACMEHelper is a helper struct that handles the registration of the user and the creation of certificates.
 type ACMEHelper struct {
@@ -21,6 +30,8 @@ type ACMEHelper struct {
 
 // NewACMEHelper creates a new ACMEHelper and gets or registers the user.
 func NewACMEHelper(acmePrivateKey crypto.PrivateKey, acmeEmail string, acmeEndpoint string, acmeHttpPort string, acmeHttpsPort string) (*ACMEHelper, error) {
+
+	legolog.Logger = log.New()
 
 	helper := &ACMEHelper{
 		user: acmeUser{
@@ -78,9 +89,9 @@ func (helper *ACMEHelper) getOrCreateUserRegistration() error {
 	return nil
 }
 
-// generateCertificateWithACMEChallenge generates a new certificate for the given domain.
+// GenerateCertificateWithACMEChallenge generates a new certificate for the given domain.
 // the ACMEHelper must be initialized before using this function.
-func (helper *ACMEHelper) generateCertificateWithACMEChallenge(domain string) (*CertificateResource, error) {
+func (helper *ACMEHelper) GenerateCertificateWithACMEChallenge(domain string) (*CertificateResource, error) {
 
 	// Check if initialized
 	if helper.client == nil || helper.config == nil {
@@ -102,7 +113,7 @@ func (helper *ACMEHelper) generateCertificateWithACMEChallenge(domain string) (*
 		return nil, fmt.Errorf("couldn't obtain certificate: %w", err)
 	}
 
-	return &CertificateResource{
+	certificateResource := &CertificateResource{
 		Domain:            certificates.Domain,
 		CertURL:           certificates.CertURL,
 		CertStableURL:     certificates.CertStableURL,
@@ -110,7 +121,16 @@ func (helper *ACMEHelper) generateCertificateWithACMEChallenge(domain string) (*
 		Certificate:       certificates.Certificate,
 		IssuerCertificate: certificates.IssuerCertificate,
 		CSR:               certificates.CSR,
-	}, nil
+	}
+
+	tlsCert, err := certificateResourceToCertificate(certificateResource)
+	if err != nil {
+		return nil, fmt.Errorf("obtained certificate not valid: %w", err)
+	}
+
+	certificateResource.NotValidAfter = tlsCert.Leaf.NotAfter
+
+	return certificateResource, nil
 
 }
 

@@ -1,6 +1,7 @@
 package mistralmail
 
 import (
+	"crypto/tls"
 	"net/http"
 	"os"
 	"os/signal"
@@ -79,7 +80,7 @@ func Serve(config *Config) {
 		}
 	}()
 
-	var msaCert, mtaCert, imapCert *certificates.CertificateResource
+	var msaTlsConfig, mtaTlsConfig, imapTlsConfig *tls.Config
 	if !config.DisableTLS {
 		// Create certificates store
 		certificates, err := certificates.NewCertificateService(config.TLSCertificatesDirectory, config.AcmeEndpoint, config.AcmeEmail)
@@ -87,15 +88,15 @@ func Serve(config *Config) {
 			log.Fatalf("Couldn't create certificate service: %v", err)
 		}
 		// Create all the certificates
-		msaCert, err = certificates.GetOrCreateCertificate(config.SubDomainOutgoing)
+		msaTlsConfig, err = certificates.GetOrCreateTlsConfig(config.SubDomainOutgoing)
 		if err != nil {
 			log.Fatalf("Couldn't create MSA certificate: %v", err)
 		}
-		mtaCert, err = certificates.GetOrCreateCertificate(config.SubDomainIncoming)
+		mtaTlsConfig, err = certificates.GetOrCreateTlsConfig(config.SubDomainIncoming)
 		if err != nil {
 			log.Fatalf("Couldn't create MTA certificate: %v", err)
 		}
-		imapCert, err = certificates.GetOrCreateCertificate(config.SubDomainIMAP)
+		imapTlsConfig, err = certificates.GetOrCreateTlsConfig(config.SubDomainIMAP)
 		if err != nil {
 			log.Fatalf("Couldn't create IMAP certificate: %v", err)
 		}
@@ -105,8 +106,7 @@ func Serve(config *Config) {
 	go func() {
 		msaConfig := config.GenerateMSAConfig()
 		if !config.DisableTLS {
-			msaConfig.TlsCert = msaCert.CertificateFile
-			msaConfig.TlsKey = msaCert.PrivateKeyFile
+			msaConfig.TLSConfig = msaTlsConfig
 		}
 
 		msaHandlerChain := &handlers.HandlerMachanism{
@@ -134,8 +134,7 @@ func Serve(config *Config) {
 	go func() {
 		imapConfig := config.GenerateIMAPBackendConfig()
 		if !config.DisableTLS {
-			imapConfig.TlsCert = imapCert.CertificateFile
-			imapConfig.TlsKey = imapCert.PrivateKeyFile
+			imapConfig.TLSConfig = imapTlsConfig
 		}
 
 		imap.Serve(imapConfig, backend.IMAPBackend)
@@ -144,8 +143,7 @@ func Serve(config *Config) {
 	// Run SMTP MTA
 	mtaConfig := config.GenerateMTAConfig()
 	if !config.DisableTLS {
-		mtaConfig.TlsCert = mtaCert.CertificateFile
-		mtaConfig.TlsKey = mtaCert.PrivateKeyFile
+		mtaConfig.TLSConfig = mtaTlsConfig
 	}
 
 	mtaHandlerChain := &handlers.HandlerMachanism{
