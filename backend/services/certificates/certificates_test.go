@@ -58,8 +58,8 @@ func TestCertificateCreationAndRenewal(t *testing.T) {
 
 		service := CertificateService{
 			config: &Config{
-				CertificateStoreDirectory:     testDir,
-				CertificateRenewValidDuration: time.Second * 1000,
+				CertificateStoreDirectory: testDir,
+				CertificateRenewThreshold: time.Second * 1000,
 			},
 			certificates: map[string]*CertificateResource{},
 			acmeHelper:   &mockACME{},
@@ -78,7 +78,7 @@ func TestCertificateCreationAndRenewal(t *testing.T) {
 		So(certResource, ShouldNotBeNil)
 
 		// but also renewed if needed
-		service.config.CertificateRenewValidDuration = 0
+		service.config.CertificateRenewThreshold = time.Second * 100 // set threshold higher than certificate validity
 		service.config.CertificateRenewInterval = time.Millisecond * 10
 		service.startRenewCertificateProcess()
 

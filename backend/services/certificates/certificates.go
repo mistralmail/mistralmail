@@ -21,13 +21,13 @@ var certificatesLock = sync.RWMutex{}
 
 // Config for the CertificateService.
 type Config struct {
-	CertificateStoreDirectory     string
-	AcmeEndpoint                  string
-	AcmeEmail                     string
-	AcmeHttpPort                  string
-	AcmeTlsPort                   string
-	CertificateRenewValidDuration time.Duration
-	CertificateRenewInterval      time.Duration
+	CertificateStoreDirectory string
+	AcmeEndpoint              string
+	AcmeEmail                 string
+	AcmeHttpPort              string
+	AcmeTlsPort               string
+	CertificateRenewThreshold time.Duration
+	CertificateRenewInterval  time.Duration
 }
 
 // CertificateService stores and manages certificates.
@@ -40,7 +40,7 @@ type CertificateService struct {
 
 const (
 	DefaultAcmeHttpPort                  = "80"
-	DefaultAcmeTlsPort                   = "443"
+	DefaultAcmeTlsPort                   = "5001"
 	DefaultCertificateRenewValidDuration = time.Hour * 24 * 30 // 30 days = Let's Encrypt default
 	DefaultCertificateRenewInterval      = time.Hour * 24
 )
@@ -49,13 +49,13 @@ const (
 func NewCertificateService(certificateStoreDirectory string, acmeEndpoint string, acmeEmail string) (*CertificateService, error) {
 	certificateStore := &CertificateService{
 		config: &Config{
-			CertificateStoreDirectory:     certificateStoreDirectory,
-			AcmeEndpoint:                  acmeEndpoint,
-			AcmeEmail:                     acmeEmail,
-			AcmeHttpPort:                  DefaultAcmeHttpPort,
-			AcmeTlsPort:                   DefaultAcmeTlsPort,
-			CertificateRenewValidDuration: DefaultCertificateRenewValidDuration,
-			CertificateRenewInterval:      DefaultCertificateRenewInterval,
+			CertificateStoreDirectory: certificateStoreDirectory,
+			AcmeEndpoint:              acmeEndpoint,
+			AcmeEmail:                 acmeEmail,
+			AcmeHttpPort:              DefaultAcmeHttpPort,
+			AcmeTlsPort:               DefaultAcmeTlsPort,
+			CertificateRenewThreshold: DefaultCertificateRenewValidDuration,
+			CertificateRenewInterval:  DefaultCertificateRenewInterval,
 		},
 		certificates: map[string]*CertificateResource{},
 	}
@@ -196,7 +196,7 @@ func (s *CertificateService) startRenewCertificateProcess() {
 				}
 
 				// renew certificate when needed.
-				if s.config.CertificateRenewValidDuration < time.Until(cert.NotValidAfter) {
+				if s.config.CertificateRenewThreshold > time.Until(cert.NotValidAfter) {
 
 					err := s.renewCertificate(domain)
 					if err != nil {
