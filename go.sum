@@ -94,6 +94,8 @@ github.com/mistralmail/smtp v0.0.0-20231023181013-349c1a74a2a8 h1:/q95FkrT+ESMtU
 github.com/mistralmail/smtp v0.0.0-20231023181013-349c1a74a2a8/go.mod h1:dRc2pKBvnz46UvSRfnvJllS7PHjaESMTKcCAEZH6S4M=
 github.com/mistralmail/smtp v0.0.0-20231028161056-e4b6982fc060 h1:u+9jINs28DsST/rQJqTJjgkIrR3gC24LcPnt9nUzBkY=
 github.com/mistralmail/smtp v0.0.0-20231028161056-e4b6982fc060/go.mod h1:dRc2pKBvnz46UvSRfnvJllS7PHjaESMTKcCAEZH6S4M=
+github.com/mistralmail/smtp v0.0.0-20231101113329-0f5e0dabba98 h1:FnEB4NPXuRx7kI6Tkbb19u5pIzTaIPvjLXnp8DYJtWY=
+github.com/mistralmail/smtp v0.0.0-20231101113329-0f5e0dabba98/go.mod h1:dRc2pKBvnz46UvSRfnvJllS7PHjaESMTKcCAEZH6S4M=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

@@ -2,8 +2,6 @@ package messageid
 
 import (
 	"fmt"
-	"net/mail"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/mistralmail/smtp/server"
@@ -42,11 +40,7 @@ func (handler *MessageID) Handle(state *smtp.State) error {
 	// anywhere in the message identifier.
 
 	// Only set if message-id not yet provided.
-	parsedMessage, err := mail.ReadMessage(strings.NewReader(string(state.Data)))
-	if err != nil {
-		return err
-	}
-	if parsedMessage.Header.Get("Message-ID") != "" {
+	if _, ok := state.GetHeader("Message-ID"); ok {
 		log.WithFields(log.Fields{
 			"Ip":        state.Ip.String(),
 			"SessionId": state.SessionId.String(),
