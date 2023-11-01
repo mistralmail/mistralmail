@@ -93,6 +93,12 @@ func BuildConfigFromEnv() *Config {
 	// Sentry
 	config.SentryDSN = getEnv("SENTRY_DSN", "")
 
+	// Spam check
+	spamCheckEnable := getEnv("SPAM_CHECK_ENABLE", "")
+	if strings.ToUpper(spamCheckEnable) == "TRUE" {
+		config.EnableSpamCheck = true
+	}
+
 	return config
 }
 
@@ -119,6 +125,7 @@ type Config struct {
 	Secret              string
 	MetricsAddress      string
 	SentryDSN           string
+	EnableSpamCheck     bool
 
 	DisableTLS               bool
 	TLSCertificatesDirectory string

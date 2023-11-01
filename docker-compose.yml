@@ -16,6 +16,8 @@ services:
       - TLS_ACME_EMAIL
       - TLS_ACME_ENDPOINT
       - SECRET
+      - SENTRY_DSN
+      - SPAM_CHECK_ENABLE
       - LEGO_CA_CERTIFICATES
     ports:
       - "25:25"

@@ -1,4 +1,4 @@
-package imap
+package imaphandler
 
 import (
 	imapbackend "github.com/mistralmail/mistralmail/backend/imap"

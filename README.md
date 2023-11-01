@@ -159,7 +159,8 @@ Instead of configuring everything via a CLI, it's also possible to use the very 
 
 ### SPAM
 
-Another feature we are also not working on currently is anti-spam. Only SPF is checked at the moment. But nothing else.
+Another feature we are also not working on currently is anti-spam. Only SPF is checked at the moment. But nothing else.  
+A very basic `X-Spam-Score` header can be enabled by setting `SPAM_CHECK_ENABLE` to `true`. It is disabled by default because it sends the incoming messages to the [Postmark Spam Check API](https://spamcheck.postmarkapp.com).
 
 
 

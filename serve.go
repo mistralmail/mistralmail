@@ -17,6 +17,7 @@ import (
 	messageid "github.com/mistralmail/mistralmail/handlers/message-id"
 	"github.com/mistralmail/mistralmail/handlers/received"
 	"github.com/mistralmail/mistralmail/handlers/relay"
+	"github.com/mistralmail/mistralmail/handlers/spamcheck"
 	"github.com/mistralmail/mistralmail/handlers/spf"
 	"github.com/mistralmail/smtp/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -109,13 +110,12 @@ func Serve(config *Config) {
 			msaConfig.TLSConfig = msaTlsConfig
 		}
 
-		msaHandlerChain := &handlers.HandlerMachanism{
-			Handlers: []handlers.Handler{
-				received.New(msaConfig),
-				messageid.New(msaConfig),
-				relay.New(config.ExternalRelayHostname, config.ExternalRelayPort, config.ExternalRelayUsername, config.ExternalRelayPassword, config.ExternalRelayInsecureSkipVerify),
-			},
-		}
+		msaHandlerChain := &handlers.HandlerMachanism{}
+		msaHandlerChain.AddHandler(
+			received.New(msaConfig),
+			messageid.New(msaConfig),
+			relay.New(config.ExternalRelayHostname, config.ExternalRelayPort, config.ExternalRelayUsername, config.ExternalRelayPassword, config.ExternalRelayInsecureSkipVerify),
+		)
 
 		msa := server.NewDefault(*msaConfig, msaHandlerChain)
 		msa.Server.AuthBackend = backend.SMTPBackend
@@ -146,13 +146,13 @@ func Serve(config *Config) {
 		mtaConfig.TLSConfig = mtaTlsConfig
 	}
 
-	mtaHandlerChain := &handlers.HandlerMachanism{
-		Handlers: []handlers.Handler{
-			received.New(mtaConfig),
-			spf.New(mtaConfig),
-			imaphandler.New(mtaConfig, backend.IMAPBackend),
-		},
+	mtaHandlerChain := &handlers.HandlerMachanism{}
+	mtaHandlerChain.AddHandler(received.New(mtaConfig))
+	mtaHandlerChain.AddHandler(spf.New(mtaConfig))
+	if config.EnableSpamCheck {
+		mtaHandlerChain.AddHandler(spamcheck.New(mtaConfig))
 	}
+	mtaHandlerChain.AddHandler(imaphandler.New(mtaConfig, backend.IMAPBackend))
 
 	mta := server.NewDefault(*mtaConfig, mtaHandlerChain)
 	go func() {
