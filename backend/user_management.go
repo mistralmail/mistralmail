@@ -29,16 +29,28 @@ func (b *Backend) CreateNewUser(email string, password string) (*models.User, er
 		return nil, fmt.Errorf("couldn't create user: %w", err)
 	}
 
-	mailbox := &models.Mailbox{
+	inbox := &models.Mailbox{
 		Name:       "INBOX",
 		Subscribed: true,
 		UserID:     user.ID,
 		User:       user,
 	}
 
-	err = b.MailboxRepo.CreateMailbox(mailbox)
+	err = b.MailboxRepo.CreateMailbox(inbox)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create inbox for user: %w", err)
+	}
+
+	junkMailbox := &models.Mailbox{
+		Name:       "Junk",
+		Subscribed: true,
+		UserID:     user.ID,
+		User:       user,
+	}
+
+	err = b.MailboxRepo.CreateMailbox(junkMailbox)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create junk mailbox for user: %w", err)
 	}
 
 	return user, nil
