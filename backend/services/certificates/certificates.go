@@ -40,7 +40,7 @@ type CertificateService struct {
 
 const (
 	DefaultAcmeHttpPort                  = "80"
-	DefaultAcmeTlsPort                   = "5001"
+	DefaultAcmeTlsPort                   = "443"
 	DefaultCertificateRenewValidDuration = time.Hour * 24 * 30 // 30 days = Let's Encrypt default
 	DefaultCertificateRenewInterval      = time.Hour * 24
 )
