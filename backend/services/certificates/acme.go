@@ -11,6 +11,7 @@ import (
 	"github.com/go-acme/lego/v4/challenge/tlsalpn01"
 	"github.com/go-acme/lego/v4/lego"
 	legolog "github.com/go-acme/lego/v4/log"
+	"github.com/go-acme/lego/v4/providers/dns"
 	"github.com/go-acme/lego/v4/registration"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,6 +23,16 @@ type ACME interface {
 	GenerateCertificateWithACMEChallenge(domain string) (*CertificateResource, error)
 }
 
+// AcmeChallenge denotes the types of Let's Encrypt challenges
+type AcmeChallenge string
+
+const (
+	// AcmeChallengeHTTP is the standard HTTP-01 or TLS-ALPN-01 challenge.
+	AcmeChallengeHTTP AcmeChallenge = "HTTP"
+	// AcmeChallengeDNS is the DNS-01 challenge.
+	AcmeChallengeDNS AcmeChallenge = "DNS"
+)
+
 // ACMEHelper is a helper struct that handles the registration of the user and the creation of certificates.
 type ACMEHelper struct {
 	user   acmeUser
@@ -30,7 +41,7 @@ type ACMEHelper struct {
 }
 
 // NewACMEHelper creates a new ACMEHelper and gets or registers the user.
-func NewACMEHelper(acmePrivateKey crypto.PrivateKey, acmeEmail string, acmeEndpoint string, acmeHttpPort string, acmeHttpsPort string) (*ACMEHelper, error) {
+func NewACMEHelper(acmePrivateKey crypto.PrivateKey, acmeEmail string, acmeEndpoint string, acmeChallenge AcmeChallenge, acmeHttpPort string, acmeHttpsPort string, acmeDNSProvider string) (*ACMEHelper, error) {
 
 	legolog.Logger = log.New()
 
@@ -55,13 +66,23 @@ func NewACMEHelper(acmePrivateKey crypto.PrivateKey, acmeEmail string, acmeEndpo
 	helper.client = c
 
 	// Setup client
-	err = helper.client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", acmeHttpPort))
-	if err != nil {
-		return nil, fmt.Errorf("couldn't set http provider: %w", err)
-	}
-	err = helper.client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", acmeHttpsPort))
-	if err != nil {
-		return nil, fmt.Errorf("couldn't set tls provider: %w", err)
+	if acmeChallenge == AcmeChallengeHTTP {
+		err = helper.client.Challenge.SetHTTP01Provider(http01.NewProviderServer("", acmeHttpPort))
+		if err != nil {
+			return nil, fmt.Errorf("couldn't set http provider: %w", err)
+		}
+		err = helper.client.Challenge.SetTLSALPN01Provider(tlsalpn01.NewProviderServer("", acmeHttpsPort))
+		if err != nil {
+			return nil, fmt.Errorf("couldn't set tls provider: %w", err)
+		}
+	} else if acmeChallenge == AcmeChallengeDNS {
+		dnsProvider, err := dns.NewDNSChallengeProviderByName(acmeDNSProvider)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't create new DNS provider for %s: %w", acmeDNSProvider, err)
+		}
+		err = helper.client.Challenge.SetDNS01Provider(dnsProvider)
+	} else {
+		return nil, fmt.Errorf("unknown ACME challange type: %v", acmeChallenge)
 	}
 
 	err = helper.getOrCreateUserRegistration()

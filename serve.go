@@ -85,7 +85,7 @@ func Serve(config *Config) {
 	var msaTlsConfig, mtaTlsConfig, imapTlsConfig *tls.Config
 	if !config.DisableTLS {
 		// Create certificates store
-		certificates, err := certificates.NewCertificateService(config.TLSCertificatesDirectory, config.AcmeEndpoint, config.AcmeEmail)
+		certificates, err := certificates.NewCertificateService(config.TLSCertificatesDirectory, config.AcmeEndpoint, config.AcmeEmail, string(config.AcmeChallenge), config.AcmeDNSProvider)
 		if err != nil {
 			log.Fatalf("Couldn't create certificate service: %v", err)
 		}

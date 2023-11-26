@@ -46,7 +46,7 @@ const (
 )
 
 // NewCertificateService creates a new CertificateService with the given config parameters and load the existing certificates from disk.
-func NewCertificateService(certificateStoreDirectory string, acmeEndpoint string, acmeEmail string) (*CertificateService, error) {
+func NewCertificateService(certificateStoreDirectory string, acmeEndpoint string, acmeEmail string, acmeChallengeType string, acmeDNSProvider string) (*CertificateService, error) {
 	certificateStore := &CertificateService{
 		config: &Config{
 			CertificateStoreDirectory: certificateStoreDirectory,
@@ -79,7 +79,7 @@ func NewCertificateService(certificateStoreDirectory string, acmeEndpoint string
 	}
 
 	// Initialize the ACME helper
-	acmeHelper, err := NewACMEHelper(certificateStore.privateKey, acmeEmail, acmeEndpoint, certificateStore.config.AcmeHttpPort, certificateStore.config.AcmeTlsPort)
+	acmeHelper, err := NewACMEHelper(certificateStore.privateKey, acmeEmail, acmeEndpoint, AcmeChallenge(acmeChallengeType), certificateStore.config.AcmeHttpPort, certificateStore.config.AcmeTlsPort, acmeDNSProvider)
 	if err != nil {
 		return nil, err
 	}

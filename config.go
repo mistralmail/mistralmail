@@ -44,7 +44,7 @@ func BuildConfigFromEnv() *Config {
 	config.DatabaseURL = getEnv("DATABASE_URL", defaultDatabaseURL)
 
 	outgoingMode := getEnv("SMTP_OUTGOING_MODE", "")
-	if outgoingMode == string(SMTPOutgoingModeRelay) {
+	if strings.ToUpper(outgoingMode) == string(SMTPOutgoingModeRelay) {
 		config.SMTPOutgoingMode = SMTPOutgoingModeRelay
 	}
 
@@ -77,8 +77,16 @@ func BuildConfigFromEnv() *Config {
 	}
 	config.TLSCertificateFile = getEnv("TLS_CERTIFICATE_FILE", "")
 	config.TLSPrivateKeyFile = getEnv("TLS_PRIVATE_KEY_FILE", "")
+	acmeChallenge := getEnv("TLS_ACME_CHALLENGE", "")
+	if strings.ToUpper(acmeChallenge) == string(AcmeChallengeHTTP) {
+		config.AcmeChallenge = AcmeChallengeHTTP
+	}
+	if strings.ToUpper(acmeChallenge) == string(AcmeChallengeDNS) {
+		config.AcmeChallenge = AcmeChallengeDNS
+	}
 	config.AcmeEmail = getEnv("TLS_ACME_EMAIL", "")
 	config.AcmeEndpoint = getEnv("TLS_ACME_ENDPOINT", defaultAcmeEndpoint)
+	config.AcmeDNSProvider = getEnv("TLS_ACME_DNS_PROVIDER", "")
 
 	config.TLSCertificatesDirectory = getEnv("TLS_CERTIFICATES_DIRECTORY", defaultCertificatesDirectory)
 
@@ -110,6 +118,16 @@ const (
 	SMTPOutgoingModeRelay SMTPOutgoingMode = "RELAY"
 )
 
+// AcmeChallenge denotes the types of Let's Encrypt challenges
+type AcmeChallenge string
+
+const (
+	// AcmeChallengeHTTP is the standard HTTP-01 or TLS-ALPN-01 challenge.
+	AcmeChallengeHTTP AcmeChallenge = "HTTP"
+	// AcmeChallengeDNS is the DNS-01 challenge.
+	AcmeChallengeDNS AcmeChallenge = "DNS"
+)
+
 // Config contains all the config for serving MistralMail
 type Config struct {
 	Hostname            string
@@ -131,8 +149,10 @@ type Config struct {
 	TLSCertificatesDirectory string
 	TLSCertificateFile       string
 	TLSPrivateKeyFile        string
+	AcmeChallenge            AcmeChallenge
 	AcmeEndpoint             string
 	AcmeEmail                string
+	AcmeDNSProvider          string
 
 	ExternalRelayHostname           string
 	ExternalRelayPort               int
@@ -197,6 +217,7 @@ func (config *Config) Validate() error {
 	// TLS config
 	if !config.DisableTLS {
 		if config.TLSCertificateFile == "" && config.TLSPrivateKeyFile == "" {
+			// When using ACME
 			if config.AcmeEndpoint == "" {
 				return fmt.Errorf("AcmeEndpoint should be defined when using TLS without providing certificates")
 			}
@@ -206,7 +227,14 @@ func (config *Config) Validate() error {
 			if config.TLSCertificatesDirectory == "" {
 				return fmt.Errorf("TLSCertificatesDirectory should be defined when using TLS without providing certificates")
 			}
+			if config.AcmeChallenge == "" {
+				return fmt.Errorf("AcmeChallenge should be defined (either HTTP or DNS)")
+			}
+			if config.AcmeChallenge == AcmeChallengeDNS && config.AcmeDNSProvider == "" {
+				return fmt.Errorf("AcmeDNSProvider shouldn't be empty when using DNS challenge")
+			}
 		}
+		// When have user defined certificates
 		if (config.TLSCertificateFile != "" && config.TLSPrivateKeyFile == "") || (config.TLSCertificateFile == "" && config.TLSPrivateKeyFile != "") {
 			return fmt.Errorf("both TLSCertificateFile and TLSPrivateKeyFile must be defined when using custom TLS certificate")
 		}
