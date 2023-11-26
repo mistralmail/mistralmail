@@ -38,6 +38,7 @@ func Serve(config *Config) {
 		})
 
 		if err == nil {
+			hook.StacktraceConfiguration.Enable = true
 			log.AddHook(hook)
 		}
 	}
