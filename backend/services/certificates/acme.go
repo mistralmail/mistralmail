@@ -81,6 +81,9 @@ func NewACMEHelper(acmePrivateKey crypto.PrivateKey, acmeEmail string, acmeEndpo
 			return nil, fmt.Errorf("couldn't create new DNS provider for %s: %w", acmeDNSProvider, err)
 		}
 		err = helper.client.Challenge.SetDNS01Provider(dnsProvider)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't set dns provider: %w", err)
+		}
 	} else {
 		return nil, fmt.Errorf("unknown ACME challange type: %v", acmeChallenge)
 	}
