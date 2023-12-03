@@ -3,6 +3,7 @@ package spamcheck
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -12,26 +13,18 @@ const (
 	postmarkAPIURL = "https://spamcheck.postmarkapp.com/filter"
 )
 
-type request struct {
-	Email   string `json:"email"`
-	Options string `json:"options"`
+// SpamScoreAPI is an interface for getting the Spam Score values for email messages.
+type SpamScoreAPI interface {
+	// getSpamScore returns the spam score value.
+	getSpamScore(message string) (*response, error)
 }
 
-type rule struct {
-	Score       string `json:"score"`
-	Description string `json:"description"`
-}
+// PostmarkAPI implements the SpamScoreAPI for Postmark.
+type PostmarkAPI struct{}
 
-type response struct {
-	Success bool   `json:"success"`
-	Score   string `json:"score"`
-	Rules   []rule `json:"rules"`
-	Report  string `json:"report"`
-}
-
-// getPostMarkScore gets the spam score from the Postmark api:
+// getSpamScore gets the spam score from the Postmark api:
 // https://spamcheck.postmarkapp.com
-func getPostMarkScore(message string) (*response, error) {
+func (api *PostmarkAPI) getSpamScore(message string) (*response, error) {
 
 	data := request{
 		Email:   message,
@@ -63,5 +56,26 @@ func getPostMarkScore(message string) (*response, error) {
 		return nil, err
 	}
 
+	if spamResponse.Score == "" {
+		return nil, fmt.Errorf("received empty spam score from api")
+	}
+
 	return spamResponse, nil
+}
+
+type request struct {
+	Email   string `json:"email"`
+	Options string `json:"options"`
+}
+
+type rule struct {
+	Score       string `json:"score"`
+	Description string `json:"description"`
+}
+
+type response struct {
+	Success bool   `json:"success"`
+	Score   string `json:"score"`
+	Rules   []rule `json:"rules"`
+	Report  string `json:"report"`
 }
