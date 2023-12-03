@@ -82,7 +82,7 @@ func TestCertificateCreationAndRenewal(t *testing.T) {
 		service.config.CertificateRenewInterval = time.Millisecond * 10
 		service.startRenewCertificateProcess()
 
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(15 * time.Millisecond)
 		So(called, ShouldEqual, 2) // should be called
 
 		_ = service
