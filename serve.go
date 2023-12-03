@@ -35,6 +35,7 @@ func Serve(config *Config) {
 			log.PanicLevel,
 			log.FatalLevel,
 			log.ErrorLevel,
+			log.WarnLevel,
 		})
 
 		if err == nil {
