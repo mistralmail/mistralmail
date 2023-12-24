@@ -26,7 +26,7 @@ You need the following DNS records:
 
 First you need to copy `.env.sample` to `.env` and configure all the needed environment variables.
 
-Make sure that ports 80 and 443 are opened for the automatic TLS certificate generation via Let's Encrypt.
+When using HTTP challenge for TLS: make sure that ports 80 and 443 are opened for the automatic TLS certificate generation via Let's Encrypt.
 
 Then you can run the Go main manually or with Docker.
 
@@ -51,16 +51,43 @@ Now you can create a user with the MistralMail CLI.
 MistralMail exposes the following ports:
 
 - `25` for all incoming SMTP emails (MTA)
-
 - `587` for all outing SMTP emails (MSA)
-
 - `143` for IMAP
-
-- `443` & `80` for Let's Encrypt
-
+- (`443` & `80` for Let's Encrypt, when not using DNS challenge)
 - `9000` for the metrics
-
 - `8080` for the api & web server
+
+###  Environment Variables
+
+| ENV                                   | Default value | Description |
+| ------------------------------------- | ------------- | ----------- |
+| `HOSTNAME`                            |               | Hostname of the MistralMail mail server |
+| `SMTP_ADDRESS_INCOMING`               | `:25` | Bind address for the listener of incoming email. |
+| `SMTP_ADDRESS_OUTGOING`               | `:587` | Bind address for the listener of outgoing email. |
+| `IMAP_ADDRESS`                        | `:143` | Bind address for the listener of IMAP. |
+| `DATABASE_URL`                        | `sqlite:test.db` | Database connection url.<br />Example using Postgres: `postgresql://user:pass@localhost/mydatabase`.<br />It defaults to a local Sqlite database. |
+| `SUBDOMAIN_INCOMING`                  | `mx.{HOSTNAME}` | Domain for the incoming mail. |
+| `SUBDOMAIN_OUTGOING`                  | `smtp.{HOSTNAME}` | Domain for the outgoing mail. |
+| `SUBDOMAIN_IMAP`                      | `imap.{HOSTNAME}` | Domain for IMAP. |
+| `SMTP_OUTGOING_MODE`                  | `RELAY` | Mode for delivering outgoing mail. Currently only `RELAY` mode is supported. So this means you have to configure an SMTP relay for sending out emails. |
+| `EXTERNAL_RELAY_HOSTNAME`             |               | Hostname of the SMTP relay. |
+| `EXTERNAL_RELAY_PORT`                 |               | Port of the SMTP relay. |
+| `EXTERNAL_RELAY_USERNAME`             |               | Username of the SMTP relay. |
+| `EXTERNAL_RELAY_PASSWORD`             |               | Password  of the SMTP relay. |
+| `EXTERNAL_RELAY_INSECURE_SKIP_VERIFY` | `false` | Allow insecure connections to the SMTP relay. |
+| `TLS_DISABLE`                         | `false` | Disable TLS for the MistralMail server. |
+| `TLS_ACME_CHALLENGE`                  |               | Type of the ACME challenge supports two types:<br />- `HTTP`: standard HTTP ACME challenge (need to open port 443 and 80 for this)<br />- `DNS`: challenge by DNS. Need to provide `TLS_ACME_DNS_PROVIDER` for this and configure the [DNS provider API credentials](https://go-acme.github.io/lego/dns/). |
+| `TLS_ACME_EMAIL`                      |               | Email of the Let's Encrypt account. |
+| `TLS_ACME_ENDPOINT`                   | `https://acme-v02.api.letsencrypt.org/directory` | Let's Encrypt endpoint. By default we use the production endpoint. If you want to test your configuration it is advised to test against staging to avoid rate limits: `https://acme-staging-v02.api.letsencrypt.org/directory` |
+| `TLS_ACME_DNS_PROVIDER`               |               | [DNS provider](https://go-acme.github.io/lego/dns/) to be used for Let's Encrypt. |
+| `TLS_CERTIFICATES_DIRECTORY`          | `./certificates` | Directory where TLS certificates are stored. |
+| `HTTP_ADDRESS`                        | `:8080` | Address of the webserver that serves the web interface and the API. |
+| `SECRET`                              |               | Encryption secret. |
+| `SENTRY_DSN`                          |               | Sentry DNS if you want to log errors to Sentry. |
+| `SPAM_CHECK_ENABLE`                   | `false` | Enable the very basic spam check. Note that it sends all incoming messages to the [Postmark Spam Check API](https://spamcheck.postmarkapp.com). |
+| `METRICS_ADDRESS`                     | `:9000` | Prometheus metrics address. |
+
+
 
 ### Using the MistralMail Web UI
 
