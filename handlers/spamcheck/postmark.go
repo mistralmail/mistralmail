@@ -22,6 +22,9 @@ type SpamScoreAPI interface {
 // PostmarkAPI implements the SpamScoreAPI for Postmark.
 type PostmarkAPI struct{}
 
+// ErrEmptySpamScore denotes an error when the response from the spam check api is empty.
+var ErrEmptySpamScore = fmt.Errorf("received empty spam score from api")
+
 // getSpamScore gets the spam score from the Postmark api:
 // https://spamcheck.postmarkapp.com
 func (api *PostmarkAPI) getSpamScore(message string) (*response, error) {
@@ -57,7 +60,7 @@ func (api *PostmarkAPI) getSpamScore(message string) (*response, error) {
 	}
 
 	if spamResponse.Score == "" {
-		return nil, fmt.Errorf("received empty spam score from api")
+		return nil, ErrEmptySpamScore
 	}
 
 	return spamResponse, nil

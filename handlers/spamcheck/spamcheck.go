@@ -1,6 +1,8 @@
 package spamcheck
 
 import (
+	"errors"
+
 	"github.com/mistralmail/smtp/server"
 	"github.com/mistralmail/smtp/smtp"
 	log "github.com/sirupsen/logrus"
@@ -25,6 +27,10 @@ type SpamCheck struct {
 func (handler *SpamCheck) Handle(state *smtp.State) error {
 
 	spamResponse, err := handler.api.getSpamScore(string(state.Data))
+	if errors.Is(err, ErrEmptySpamScore) {
+		// retry once
+		spamResponse, err = handler.api.getSpamScore(string(state.Data))
+	}
 	if err != nil {
 		log.WithFields(log.Fields{
 			"Ip":        state.Ip.String(),
