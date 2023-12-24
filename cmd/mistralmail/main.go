@@ -7,9 +7,12 @@ import (
 
 func main() {
 
-	config := mistralmail.BuildConfigFromEnv()
+	config, err := mistralmail.BuildConfigFromEnv()
+	if err != nil {
+		log.Fatalf("couldn't build config: %v", err)
+	}
 
-	err := config.Validate()
+	err = config.Validate()
 	if err != nil {
 		log.Fatalf("config invalid: %v", err)
 	}

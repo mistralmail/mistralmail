@@ -22,9 +22,10 @@ func TestConfigWithoutHostname(t *testing.T) {
 		t.Setenv("IMAP_ADDRESS", "imap.example.com:143")
 		t.Setenv("DATABASE_URL", "sqlite:file.db")
 
-		config := BuildConfigFromEnv()
+		config, err := BuildConfigFromEnv()
+		So(err, ShouldBeNil)
 
-		err := config.Validate()
+		err = config.Validate()
 
 		Convey("Then it should return an error", func() {
 			So(err, ShouldNotBeNil)
@@ -50,9 +51,10 @@ func TestConfigWithoutSecret(t *testing.T) {
 		t.Setenv("IMAP_ADDRESS", "imap.example.com:143")
 		t.Setenv("DATABASE_URL", "sqlite:file.db")
 
-		config := BuildConfigFromEnv()
+		config, err := BuildConfigFromEnv()
+		So(err, ShouldBeNil)
 
-		err := config.Validate()
+		err = config.Validate()
 
 		Convey("Then it should return an error", func() {
 			So(err, ShouldNotBeNil)
@@ -77,9 +79,10 @@ func TestConfig(t *testing.T) {
 		t.Setenv("IMAP_ADDRESS", "imap.example.com:143")
 		t.Setenv("DATABASE_URL", "sqlite:file.db")
 
-		config := BuildConfigFromEnv()
+		config, err := BuildConfigFromEnv()
+		So(err, ShouldBeNil)
 
-		err := config.Validate()
+		err = config.Validate()
 
 		Convey("Then it should not return an error", func() {
 			So(err, ShouldBeNil)

@@ -33,7 +33,7 @@ var (
 )
 
 // BuildConfigFromEnv populates a MistralMail config from env variables
-func BuildConfigFromEnv() *Config {
+func BuildConfigFromEnv() (*Config, error) {
 	config := &Config{}
 
 	// Core config
@@ -58,7 +58,7 @@ func BuildConfigFromEnv() *Config {
 	portInt, err := strconv.Atoi(port)
 	if err != nil {
 		if port != "" {
-			panic("TODO: return error here")
+			return nil, fmt.Errorf("couldn't parse EXTERNAL_RELAY_PORT")
 		}
 	}
 	config.ExternalRelayPort = portInt
@@ -107,7 +107,7 @@ func BuildConfigFromEnv() *Config {
 		config.EnableSpamCheck = true
 	}
 
-	return config
+	return config, nil
 }
 
 // SMTPOutgoingMode denotes the types of SMTP MSA modes.

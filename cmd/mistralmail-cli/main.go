@@ -23,7 +23,10 @@ func main() {
 
 	var err error
 
-	config = mistralmail.BuildConfigFromEnv()
+	config, err := mistralmail.BuildConfigFromEnv()
+	if err != nil {
+		log.Fatalf("couldn't build config: %v", err)
+	}
 
 	backend, err = mistralmailbackend.New(config.DatabaseURL)
 	if err != nil {
