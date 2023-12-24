@@ -50,7 +50,7 @@ func BuildConfigFromEnv() *Config {
 
 	config.SubDomainIncoming = getEnv("SUBDOMAIN_INCOMING", fmt.Sprintf("%s.%s", defaultSubDomainIncoming, config.Hostname))
 	config.SubDomainOutgoing = getEnv("SUBDOMAIN_OUTGOING", fmt.Sprintf("%s.%s", defaultSubDomainOutgoing, config.Hostname))
-	config.SubDomainIMAP = getEnv("SUBDOMAIN_INCOMING", fmt.Sprintf("%s.%s", defaultIMAPSubdomain, config.Hostname))
+	config.SubDomainIMAP = getEnv("SUBDOMAIN_IMAP", fmt.Sprintf("%s.%s", defaultIMAPSubdomain, config.Hostname))
 
 	// SMTP external relay config
 	config.ExternalRelayHostname = getEnv("EXTERNAL_RELAY_HOSTNAME", "")
