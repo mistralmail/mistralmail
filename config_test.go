@@ -29,7 +29,7 @@ func TestConfigWithoutHostname(t *testing.T) {
 
 		Convey("Then it should return an error", func() {
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "Hostname cannot be empty")
+			So(err.Error(), ShouldEqual, "HOSTNAME cannot be empty")
 		})
 	})
 
@@ -58,7 +58,7 @@ func TestConfigWithoutSecret(t *testing.T) {
 
 		Convey("Then it should return an error", func() {
 			So(err, ShouldNotBeNil)
-			So(err.Error(), ShouldEqual, "Secret cannot be empty")
+			So(err.Error(), ShouldEqual, "SECRET cannot be empty")
 		})
 	})
 }

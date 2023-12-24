@@ -166,51 +166,51 @@ func (config *Config) Validate() error {
 
 	// Core config
 	if config.Hostname == "" {
-		return fmt.Errorf("Hostname cannot be empty")
+		return fmt.Errorf("HOSTNAME cannot be empty")
 	}
 
 	if config.SMTPAddressIncoming == "" {
-		return fmt.Errorf("SMTPAddressIncoming cannot be empty")
+		return fmt.Errorf("SMTP_ADDRESS_INCOMING cannot be empty")
 	}
 
 	if config.SMTPAddressOutgoing == "" {
-		return fmt.Errorf("SMTPAddressOutgoing cannot be empty")
+		return fmt.Errorf("SMTP_ADDRESS_OUTGOING cannot be empty")
 	}
 
 	if config.SMTPOutgoingMode == "" {
-		return fmt.Errorf("SMTPOutgoingMode cannot be empty")
+		return fmt.Errorf("SMTP_OUTGOING_MODE cannot be empty")
 	}
 	if config.SMTPOutgoingMode != SMTPOutgoingModeRelay {
-		return fmt.Errorf("unknown SMTPOutgoingMode")
+		return fmt.Errorf("unknown SMTP_OUTGOING_MODE")
 	}
 
 	if config.IMAPAddress == "" {
-		return fmt.Errorf("IMAPAddress cannot be empty")
+		return fmt.Errorf("IMAP_ADDRESS cannot be empty")
 	}
 
 	if config.DatabaseURL == "" {
-		return fmt.Errorf("DatabaseURL cannot be empty")
+		return fmt.Errorf("DATABASE_URL cannot be empty")
 	}
 
 	if config.SubDomainIncoming == "" {
-		return fmt.Errorf("SubDomainIncoming cannot be empty")
+		return fmt.Errorf("SUBDOMAIN_INCOMING cannot be empty")
 	}
 
 	if config.SubDomainOutgoing == "" {
-		return fmt.Errorf("SubDomainOutgoing cannot be empty")
+		return fmt.Errorf("SUBDOMAIN_OUTGOING cannot be empty")
 	}
 
 	if config.SubDomainIMAP == "" {
-		return fmt.Errorf("SubDomainIMAP cannot be empty")
+		return fmt.Errorf("SUBDOMAIN_IMAP cannot be empty")
 	}
 
 	// SMTP external relay config
 	if config.SMTPOutgoingMode == SMTPOutgoingModeRelay {
 		if config.ExternalRelayHostname == "" {
-			return fmt.Errorf("ExternalRelayHostname cannot be empty when in relay mode")
+			return fmt.Errorf("EXTERNAL_RELAY_HOSTNAME cannot be empty when in relay mode")
 		}
 		if config.ExternalRelayPort == 0 {
-			return fmt.Errorf("ExternalRelayPort cannot be empty when in relay mode")
+			return fmt.Errorf("EXTERNAL_RELAY_PORT cannot be empty when in relay mode")
 		}
 	}
 
@@ -219,38 +219,38 @@ func (config *Config) Validate() error {
 		if config.TLSCertificateFile == "" && config.TLSPrivateKeyFile == "" {
 			// When using ACME
 			if config.AcmeEndpoint == "" {
-				return fmt.Errorf("AcmeEndpoint should be defined when using TLS without providing certificates")
+				return fmt.Errorf("TLS_ACME_ENDPOINT should be defined when using TLS without providing certificates")
 			}
 			if config.AcmeEmail == "" {
-				return fmt.Errorf("AcmeEmail should be defined when using TLS without providing certificates")
+				return fmt.Errorf("TLS_ACME_EMAIL should be defined when using TLS without providing certificates")
 			}
 			if config.TLSCertificatesDirectory == "" {
-				return fmt.Errorf("TLSCertificatesDirectory should be defined when using TLS without providing certificates")
+				return fmt.Errorf("TLS_CERTIFICATES_DIRECTORY should be defined when using TLS without providing certificates")
 			}
 			if config.AcmeChallenge == "" {
-				return fmt.Errorf("AcmeChallenge should be defined (either HTTP or DNS)")
+				return fmt.Errorf("TLS_ACME_CHALLENGE should be defined (either HTTP or DNS)")
 			}
 			if config.AcmeChallenge == AcmeChallengeDNS && config.AcmeDNSProvider == "" {
-				return fmt.Errorf("AcmeDNSProvider shouldn't be empty when using DNS challenge")
+				return fmt.Errorf("TLS_ACME_DNS_PROVIDER shouldn't be empty when using DNS challenge")
 			}
 		}
 		// When have user defined certificates
 		if (config.TLSCertificateFile != "" && config.TLSPrivateKeyFile == "") || (config.TLSCertificateFile == "" && config.TLSPrivateKeyFile != "") {
-			return fmt.Errorf("both TLSCertificateFile and TLSPrivateKeyFile must be defined when using custom TLS certificate")
+			return fmt.Errorf("both TLS_CERTIFICATE_FILE and TLS_PRIVATE_KEY_FILE must be defined when using custom TLS certificate")
 		}
 	}
 
 	// HTTP server & api
 	if config.HTTPAddress == "" {
-		return fmt.Errorf("HTTPAddress cannot be empty")
+		return fmt.Errorf("HTTP_ADDRESS cannot be empty")
 	}
 	if config.Secret == "" {
-		return fmt.Errorf("Secret cannot be empty")
+		return fmt.Errorf("SECRET cannot be empty")
 	}
 
 	// Metrics
 	if config.MetricsAddress == "" {
-		return fmt.Errorf("MetricsAddress cannot be empty")
+		return fmt.Errorf("METRICS_ADDRESS cannot be empty")
 	}
 
 	return nil
