@@ -286,6 +286,69 @@ func TestIMAPServer(t *testing.T) {
 
 				})
 
+				Convey("When copying a message between mailboxes", func() {
+					// Select source mailbox
+					sourceMailbox := "INBOX"
+					_, err := imapClient.Select(sourceMailbox, false)
+					So(err, ShouldBeNil)
+
+					// Append a message to the source mailbox
+					flags := []string{goimap.SeenFlag}
+					err = imapClient.Append(sourceMailbox, flags, date, convertToLiteral(message))
+					So(err, ShouldBeNil)
+
+					// Select destination mailbox
+					destMailbox := "DestinationMailbox"
+					err = imapClient.Create(destMailbox)
+					So(err, ShouldBeNil)
+
+					// Copy the message from source to destination
+					seqSet := new(goimap.SeqSet)
+					seqSet.AddNum(1) // Assuming the message is at sequence number 1
+					err = imapClient.Copy(seqSet, destMailbox)
+					So(err, ShouldBeNil)
+
+					// Check that the message exists in the destination mailbox
+					_, err = imapClient.Select(destMailbox, false)
+					So(err, ShouldBeNil)
+
+					seqSet = new(goimap.SeqSet)
+					seqSet.AddNum(1)
+					messages := make(chan *goimap.Message, 1)
+					done := make(chan error, 1)
+
+					go func() {
+						done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchAll}, messages)
+					}()
+
+					err = <-done
+					So(err, ShouldBeNil)
+
+					So(len(messages), ShouldEqual, 1)
+
+					copiedMsg := <-messages
+					So(copiedMsg, ShouldNotBeNil)
+					So(copiedMsg.Envelope.Subject, ShouldEqual, "Test Message")
+
+					// Check that the message still exists in the source mailbox
+					_, err = imapClient.Select(sourceMailbox, false)
+					So(err, ShouldBeNil)
+
+					seqSet = new(goimap.SeqSet)
+					seqSet.AddNum(1)
+					messages = make(chan *goimap.Message, 1)
+					done = make(chan error, 1)
+
+					go func() {
+						done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchAll}, messages)
+					}()
+
+					err = <-done
+					So(err, ShouldBeNil)
+
+					So(len(messages), ShouldEqual, 1)
+				})
+
 			})
 
 		})

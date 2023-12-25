@@ -210,6 +210,8 @@ func (mbox *IMAPMailbox) ListMessages(uid bool, seqSet *imap.SeqSet, items []ima
 		return fmt.Errorf("couldn't get messages: %v", err)
 	}
 
+	log.Debugf("found %d messages in mailbox %q", len(messages), mbox.Name())
+
 	for i, message := range messages {
 
 		msg := IMAPMessage{
