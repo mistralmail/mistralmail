@@ -349,6 +349,61 @@ func TestIMAPServer(t *testing.T) {
 					So(len(messages), ShouldEqual, 1)
 				})
 
+				Convey("When modifying message flags", func() {
+					// Select mailbox
+					selectedMailbox := "INBOX"
+					_, err := imapClient.Select(selectedMailbox, false)
+					So(err, ShouldBeNil)
+
+					// Append a message to the mailbox
+					flags := []string{goimap.SeenFlag}
+					err = imapClient.Append(selectedMailbox, flags, date, convertToLiteral(message))
+					So(err, ShouldBeNil)
+
+					// Fetch the message to get its initial flags
+					seqSet := new(goimap.SeqSet)
+					seqSet.AddNum(3) // Assuming the message is at sequence number 3
+
+					messages := make(chan *goimap.Message, 1)
+					done := make(chan error, 1)
+
+					go func() {
+						done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchFlags}, messages)
+					}()
+
+					err = <-done
+					So(err, ShouldBeNil)
+
+					So(len(messages), ShouldEqual, 1)
+
+					initialMsg := <-messages
+					So(initialMsg, ShouldNotBeNil)
+					So(initialMsg.Flags, ShouldContain, goimap.SeenFlag)
+
+					// Modify the flags of the message
+					newFlags := []interface{}{goimap.AnsweredFlag}
+					err = imapClient.Store(seqSet, goimap.FormatFlagsOp(goimap.SetFlags, false), newFlags, nil)
+					So(err, ShouldBeNil)
+
+					// Fetch the message again to verify the updated flags
+					messages = make(chan *goimap.Message, 1)
+					done = make(chan error, 1)
+
+					go func() {
+						done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchFlags}, messages)
+					}()
+
+					err = <-done
+					So(err, ShouldBeNil)
+
+					So(len(messages), ShouldEqual, 1)
+
+					updatedMsg := <-messages
+					So(updatedMsg, ShouldNotBeNil)
+					So(updatedMsg.Flags, ShouldContain, goimap.AnsweredFlag)
+					So(updatedMsg.Flags, ShouldNotContain, goimap.SeenFlag)
+				})
+
 			})
 
 		})
