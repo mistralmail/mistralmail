@@ -406,6 +406,127 @@ func TestIMAPServer(t *testing.T) {
 
 			})
 
+			Convey("Sequence Sets", func() {
+
+				Convey("When working with sequence sets in a new mailbox", func() {
+					// Create a new mailbox
+					newMailbox := "NewMailboxForSequenceSets"
+					err := imapClient.Create(newMailbox)
+					So(err, ShouldBeNil)
+
+					// Select the new mailbox
+					_, err = imapClient.Select(newMailbox, false)
+					So(err, ShouldBeNil)
+
+					// Append three messages to the new mailbox
+					for i := 1; i <= 3; i++ {
+						flags := []string{goimap.SeenFlag}
+						err := imapClient.Append(newMailbox, flags, date, convertToLiteral(message))
+						So(err, ShouldBeNil)
+					}
+
+					// Fetching messages with a sequence set
+					// Fetch messages 1 and 3
+					seqSet := new(goimap.SeqSet)
+					seqSet.AddRange(1, 1)
+					seqSet.AddRange(3, 3)
+
+					messages := make(chan *goimap.Message, 2)
+					done := make(chan error, 1)
+
+					go func() {
+						done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchUid, goimap.FetchFlags}, messages)
+					}()
+
+					err = <-done
+					So(err, ShouldBeNil)
+
+					So(len(messages), ShouldEqual, 2)
+
+					msg1 := <-messages
+					So(msg1, ShouldNotBeNil)
+					So(msg1.SeqNum, ShouldEqual, 1)
+
+					msg3 := <-messages
+					So(msg3, ShouldNotBeNil)
+					So(msg3.SeqNum, ShouldEqual, 3)
+
+					// Convey("Copying messages with a sequence set", func() {
+					// Create another new mailbox for copying
+					copiedMailbox := "CopiedMailboxForSequenceSets"
+					err = imapClient.Create(copiedMailbox)
+					So(err, ShouldBeNil)
+
+					// Copy messages 1 and 3 to the new mailbox
+					seqSet = new(goimap.SeqSet)
+					seqSet.AddRange(1, 1)
+					seqSet.AddRange(3, 3)
+
+					err = imapClient.Copy(seqSet, copiedMailbox)
+					So(err, ShouldBeNil)
+
+					// Check that messages 1 and 3 exist in the copied mailbox
+					_, err = imapClient.Select(copiedMailbox, false)
+					So(err, ShouldBeNil)
+
+					seqSet = new(goimap.SeqSet)
+					seqSet.AddRange(1, 3)
+
+					messages = make(chan *goimap.Message, 3)
+					done = make(chan error, 1)
+
+					go func() {
+						done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchUid, goimap.FetchFlags}, messages)
+					}()
+
+					err = <-done
+					So(err, ShouldBeNil)
+
+					So(len(messages), ShouldEqual, 2)
+
+					msg1 = <-messages
+					So(msg1, ShouldNotBeNil)
+					So(msg1.SeqNum, ShouldEqual, 1)
+
+					msg3 = <-messages
+					So(msg3, ShouldNotBeNil)
+					So(msg3.SeqNum, ShouldEqual, 2)
+
+					// Deleting messages with a sequence set
+					// Delete messages 1 and 3
+					_, err = imapClient.Select("INBOX", false)
+					So(err, ShouldBeNil)
+
+					seqSet = new(goimap.SeqSet)
+					seqSet.AddRange(1, 1)
+					seqSet.AddRange(3, 3)
+
+					err = imapClient.Store(seqSet, goimap.AddFlags, []interface{}{goimap.DeletedFlag}, nil)
+					So(err, ShouldBeNil)
+
+					// Expunge to permanently delete the messages
+					err = imapClient.Expunge(nil)
+					So(err, ShouldBeNil)
+
+					// Fetch messages 1 and 3 (should not exist)
+					seqSet = new(goimap.SeqSet)
+					seqSet.AddRange(1, 3)
+
+					messages = make(chan *goimap.Message, 3)
+					done = make(chan error, 1)
+
+					go func() {
+						done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchUid, goimap.FetchFlags}, messages)
+					}()
+
+					err = <-done
+					So(err, ShouldBeNil)
+
+					So(len(messages), ShouldEqual, 1)
+
+				})
+			})
+
 		})
 
 	})
