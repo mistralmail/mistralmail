@@ -527,6 +527,112 @@ func TestIMAPServer(t *testing.T) {
 				})
 			})
 
+			Convey("When searching for messages", func() {
+				// Select the mailbox
+				_, err := imapClient.Select(inbox, false)
+				So(err, ShouldBeNil)
+
+				// Append messages with different flags
+				flags := []string{goimap.SeenFlag}
+				err = imapClient.Append(inbox, flags, date, convertToLiteral(message))
+				So(err, ShouldBeNil)
+
+				flags = []string{goimap.AnsweredFlag}
+				err = imapClient.Append(inbox, flags, date, convertToLiteral(message))
+				So(err, ShouldBeNil)
+
+				flags = []string{goimap.FlaggedFlag}
+				err = imapClient.Append(inbox, flags, date, convertToLiteral(message))
+				So(err, ShouldBeNil)
+
+				// Search for messages with 'SEEN' flag
+				searchCriteria := goimap.SearchCriteria{
+					WithFlags: []string{"\\SEEN"},
+				}
+
+				seqNums, err := imapClient.Search(&searchCriteria)
+				So(err, ShouldBeNil)
+
+				// Fetch the matched messages
+				messages := make(chan *goimap.Message, 3)
+				done := make(chan error, 1)
+
+				seqSet := &goimap.SeqSet{}
+				seqSet.AddNum(seqNums...)
+
+				go func() {
+					done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchFlags}, messages)
+				}()
+
+				err = <-done
+				So(err, ShouldBeNil)
+
+				So(len(messages), ShouldEqual, 2)
+
+				msg := <-messages
+				So(msg, ShouldNotBeNil)
+				So(msg.Flags, ShouldContain, goimap.SeenFlag)
+
+				// Search for messages with 'ANSWERED' flag
+				searchCriteria = goimap.SearchCriteria{
+					WithFlags: []string{"\\ANSWERED"},
+				}
+
+				seqNums, err = imapClient.Search(&searchCriteria)
+				So(err, ShouldBeNil)
+
+				// Fetch the matched messages
+				messages = make(chan *goimap.Message, 3)
+				done = make(chan error, 1)
+
+				seqSet = &goimap.SeqSet{}
+				seqSet.AddNum(seqNums...)
+
+				go func() {
+					done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchFlags}, messages)
+				}()
+
+				err = <-done
+				So(err, ShouldBeNil)
+
+				So(len(messages), ShouldEqual, 1)
+
+				msg = <-messages
+				So(msg, ShouldNotBeNil)
+				So(msg.Flags, ShouldContain, goimap.AnsweredFlag)
+
+				// Search for messages with 'FLAGGED' flag
+				searchCriteria = goimap.SearchCriteria{
+					WithFlags: []string{"\\FLAGGED"},
+				}
+
+				seqNums, err = imapClient.Search(&searchCriteria)
+				So(err, ShouldBeNil)
+
+				// Fetch the matched messages
+				messages = make(chan *goimap.Message, 3)
+				done = make(chan error, 1)
+
+				seqSet = &goimap.SeqSet{}
+				seqSet.AddNum(seqNums...)
+
+				go func() {
+					done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchFlags}, messages)
+				}()
+
+				err = <-done
+				So(err, ShouldBeNil)
+
+				So(len(messages), ShouldEqual, 1)
+
+				msg = <-messages
+				So(msg, ShouldNotBeNil)
+				So(msg.Flags, ShouldContain, goimap.FlaggedFlag)
+
+				// Add more search criteria tests as needed
+
+			})
+
 		})
 
 	})
