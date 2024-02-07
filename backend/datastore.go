@@ -2,6 +2,9 @@ package backend
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"time"
 
 	"github.com/mistralmail/mistralmail/backend/models"
 	"github.com/xo/dburl"
@@ -9,6 +12,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // initDB creates a new datastore with the given database connection string/url
@@ -23,7 +27,18 @@ func initDB(dbURL string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("couldn't parse database connection url: %w", err)
 	}
 
-	c := &gorm.Config{}
+	c := &gorm.Config{
+		Logger: logger.New(
+			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+			logger.Config{
+				SlowThreshold:             time.Second, // Slow SQL threshold
+				LogLevel:                  logger.Warn, // Log level
+				IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
+				ParameterizedQueries:      true,        // Don't include params in the SQL log
+				Colorful:                  true,        // Enable color
+			},
+		),
+	}
 
 	switch u.Driver {
 	case "sqlite3":
@@ -43,14 +58,43 @@ func initDB(dbURL string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to establish a database connection: %w", err)
 	}
 
-	// Migrate
-	// TODO: how to do this properly?
-	err = db.AutoMigrate(&models.User{}, &models.Mailbox{}, &models.Message{})
+	err = migrate(db)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't run migrations: %w", err)
+		return nil, fmt.Errorf("couldn't migrate: %w", err)
 	}
 
 	return db, nil
+
+}
+
+// migrate the database models.
+func migrate(db *gorm.DB) error {
+
+	// Migrate
+	// TODO: how to do this properly?
+	err := db.AutoMigrate(
+		&models.User{},
+		&models.Mailbox{},
+		&models.Message{},
+	)
+	if err != nil {
+		return err
+	}
+
+	err = db.Migrator().DropView(models.MessageWithSequenceNumberViewName)
+	if err != nil {
+		return err
+	}
+
+	err = db.Migrator().CreateView(
+		models.MessageWithSequenceNumberViewName,
+		gorm.ViewOption{Query: db.Raw(models.MessageWithSequenceNumberViewQuery)},
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }
 

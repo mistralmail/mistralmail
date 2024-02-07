@@ -52,7 +52,10 @@ func TestIMAPServer(t *testing.T) {
 		if err != nil {
 			t.Logf("%v", err)
 		}
-		backend.Close()
+		err = backend.Close()
+		if err != nil {
+			t.Errorf("%v", err)
+		}
 		err = os.Remove(testDB)
 		if err != nil {
 			t.Errorf("%v", err)
@@ -438,8 +441,12 @@ func TestIMAPServer(t *testing.T) {
 						done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchUid, goimap.FetchFlags}, messages)
 					}()
 
-					err = <-done
-					So(err, ShouldBeNil)
+					select {
+					case err = <-done:
+						So(err, ShouldBeNil)
+					case <-time.After(5 * time.Second):
+						So(fmt.Errorf("time-out while waiting for fetch"), ShouldBeNil)
+					}
 
 					So(len(messages), ShouldEqual, 2)
 
@@ -629,8 +636,115 @@ func TestIMAPServer(t *testing.T) {
 				So(msg, ShouldNotBeNil)
 				So(msg.Flags, ShouldContain, goimap.FlaggedFlag)
 
-				// Add more search criteria tests as needed
+			})
 
+			Convey("UIDs", func() {
+
+				Convey("When working with UIDs in a new mailbox", func() {
+					// Create a new mailbox
+					newMailbox := "NewMailboxForUIDs"
+					err := imapClient.Create(newMailbox)
+					So(err, ShouldBeNil)
+
+					// Select the new mailbox
+					_, err = imapClient.Select(newMailbox, false)
+					So(err, ShouldBeNil)
+
+					// Append three messages to the new mailbox
+					for i := 1; i <= 3; i++ {
+						flags := []string{goimap.SeenFlag}
+						err := imapClient.Append(newMailbox, flags, date, convertToLiteral(message))
+						So(err, ShouldBeNil)
+					}
+
+					// Getting the uids of the new messages
+					seqSet := &goimap.SeqSet{}
+					seqSet.AddNum(1, 3)
+
+					messages := make(chan *goimap.Message, 2)
+					done := make(chan error, 1)
+
+					go func() {
+						done <- imapClient.Fetch(seqSet, []goimap.FetchItem{goimap.FetchFlags, goimap.FetchUid}, messages)
+					}()
+
+					select {
+					case err = <-done:
+						So(err, ShouldBeNil)
+					case <-time.After(5 * time.Second):
+						So(fmt.Errorf("time-out while waiting for fetch"), ShouldBeNil)
+					}
+
+					So(len(messages), ShouldEqual, 2)
+
+					msg1 := <-messages
+					So(msg1, ShouldNotBeNil)
+					So(msg1.Uid, ShouldNotEqual, 0)
+					uid1 := msg1.Uid
+
+					msg3 := <-messages
+					So(msg3, ShouldNotBeNil)
+					So(msg3.Uid, ShouldNotEqual, 0)
+					uid3 := msg3.Uid
+
+					uids := &goimap.SeqSet{}
+					uids.AddNum(uid1, uid3)
+
+					messages = make(chan *goimap.Message, 2)
+					done = make(chan error, 1)
+
+					go func() {
+						done <- imapClient.UidFetch(uids, []goimap.FetchItem{goimap.FetchFlags, goimap.FetchUid}, messages)
+					}()
+
+					select {
+					case err = <-done:
+						So(err, ShouldBeNil)
+					case <-time.After(5 * time.Second):
+						So(fmt.Errorf("time-out while waiting for fetch"), ShouldBeNil)
+					}
+
+					So(len(messages), ShouldEqual, 2)
+
+					msg1 = <-messages
+					So(msg1, ShouldNotBeNil)
+					So(msg1.Uid, ShouldEqual, uid1)
+
+					msg3 = <-messages
+					So(msg3, ShouldNotBeNil)
+					So(msg3.Uid, ShouldEqual, uid3)
+
+					// Deleting messages with UIDs
+					_, err = imapClient.Select(newMailbox, false)
+					So(err, ShouldBeNil)
+
+					uids = &goimap.SeqSet{}
+					uids.AddNum(uid1, uid3)
+
+					err = imapClient.UidStore(uids, goimap.AddFlags, []interface{}{goimap.DeletedFlag}, nil)
+					So(err, ShouldBeNil)
+
+					// Expunge to permanently delete the messages
+					err = imapClient.Expunge(nil)
+					So(err, ShouldBeNil)
+
+					// Fetch messages again
+					uids = &goimap.SeqSet{}
+					uids.AddNum(uid1, uid3)
+
+					messages = make(chan *goimap.Message, 2)
+					done = make(chan error, 1)
+
+					go func() {
+						done <- imapClient.UidFetch(uids, []goimap.FetchItem{goimap.FetchFlags}, messages)
+					}()
+
+					err = <-done
+					So(err, ShouldBeNil)
+
+					So(len(messages), ShouldEqual, 0)
+
+				})
 			})
 
 		})

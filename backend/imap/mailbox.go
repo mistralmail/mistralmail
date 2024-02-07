@@ -74,8 +74,10 @@ func (mbox *IMAPMailbox) flags() []string {
 		return flags
 	*/
 
+	parameters := models.FindMessagesParameters{}
+
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
 	if err != nil {
 		// TODO handle error
 		log.Fatalf("couldn't get messages: %v", err)
@@ -100,8 +102,10 @@ func (mbox *IMAPMailbox) flags() []string {
 
 func (mbox *IMAPMailbox) unseenSeqNum() uint32 {
 
+	parameters := models.FindMessagesParameters{}
+
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
 	if err != nil {
 		// TODO handle error
 		log.Fatalf("couldn't get messages: %v", err)
@@ -204,34 +208,30 @@ func (mbox *IMAPMailbox) ListMessages(uid bool, seqSet *imap.SeqSet, items []ima
 		}
 	*/
 
+	parameters := models.FindMessagesParameters{}
+	if uid {
+		parameters.UIDSet = sequenceSetToSequencesSlice(seqSet)
+	} else {
+		parameters.SequenceSet = sequenceSetToSequencesSlice(seqSet)
+	}
+
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
 	if err != nil {
 		return fmt.Errorf("couldn't get messages: %v", err)
 	}
 
 	log.Debugf("found %d messages in mailbox %q", len(messages), mbox.Name())
 
-	for i, message := range messages {
+	for _, message := range messages {
 
 		msg := IMAPMessage{
 			message: message,
 		}
 
-		seqNum := uint32(i + 1)
-
-		var id uint32
-		if uid {
-			id = uint32(msg.message.ID)
-		} else {
-			id = seqNum
-		}
-		if !seqSet.Contains(id) {
-			continue
-		}
-
-		m, err := msg.Fetch(seqNum, items)
+		m, err := msg.Fetch(uint32(message.SequenceNumber), items)
 		if err != nil {
+			log.Errorf("couldn't fetch message: %v", err)
 			continue
 		}
 
@@ -266,8 +266,10 @@ func (mbox *IMAPMailbox) SearchMessages(uid bool, criteria *imap.SearchCriteria)
 		return ids, nil
 	*/
 
+	parameters := models.FindMessagesParameters{}
+
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't search messages: %v", err)
 	}
@@ -357,8 +359,10 @@ func (mbox *IMAPMailbox) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, op i
 		}
 	*/
 
+	parameters := models.FindMessagesParameters{}
+
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
 	if err != nil {
 		return fmt.Errorf("couldn't update message flags: %v", err)
 	}
@@ -424,7 +428,9 @@ func (mbox *IMAPMailbox) CopyMessages(uid bool, seqset *imap.SeqSet, destName st
 		messageRepo: mbox.messageRepo,
 	}
 
-	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
+	parameters := models.FindMessagesParameters{}
+
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
 	if err != nil {
 		return fmt.Errorf("couldn't find messages: %v", err)
 	}
@@ -485,8 +491,10 @@ func (mbox *IMAPMailbox) Expunge() error {
 		}
 	*/
 
+	parameters := models.FindMessagesParameters{}
+
 	// TODO, yep this is not performant at all, but let's hope it works
-	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID)
+	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
 	if err != nil {
 		return fmt.Errorf("couldn't find messages: %v", err)
 	}
@@ -512,4 +520,16 @@ func (mbox *IMAPMailbox) Expunge() error {
 	}
 
 	return nil
+}
+
+// sequenceSetToSequencesSlice converts a seqset from go-imap to a slice of Sequence from our own backend.
+func sequenceSetToSequencesSlice(seqset *imap.SeqSet) []models.Sequence {
+	sequences := []models.Sequence{}
+	for _, seq := range seqset.Set {
+		sequences = append(sequences, models.Sequence{
+			Start: int(seq.Start),
+			Stop:  int(seq.Stop),
+		})
+	}
+	return sequences
 }

@@ -19,7 +19,21 @@ type Message struct {
 	Body  []byte
 
 	MailboxID uint `gorm:"foreignKey:Mailbox"`
+
+	SequenceNumber uint `gorm:"->;-:migration"` // read only and skip in migrations because its the column from a view.
 }
+
+// MessageWithSequenceNumberViewName is the name of the view that represents all messages with their corresponding sequence number.
+const MessageWithSequenceNumberViewName = "messages_sequence_numbers"
+
+// MessageWithSequenceNumberViewQuery query that selects this view.
+const MessageWithSequenceNumberViewQuery = `
+	SELECT
+		*,
+		ROW_NUMBER() OVER (PARTITION BY mailbox_id ORDER BY 'date') AS sequence_number
+	FROM messages
+	WHERE deleted_at IS NULL;
+	`
 
 // MessageRepository implements the Message repository
 type MessageRepository struct {
@@ -56,10 +70,62 @@ func (r *MessageRepository) DeleteMessageByID(id uint) error {
 	return r.db.Delete(&Message{}, id).Error
 }
 
+// Sequence represents a sequence of messages going from Start to Stop.
+type Sequence struct {
+	// Start denotes the beginning of the range (inclusive)
+	Start int
+	// Stop denotes the end of the range (inclusive)
+	Stop int
+}
+
+// FindMessagesParameters are optional parameters that can be used to get/find messages.
+type FindMessagesParameters struct {
+	// SequenceSet is a list of sequences with sequence numbers.
+	SequenceSet []Sequence
+	// UIDSet is a list of sequences with uids.
+	UIDSet []Sequence
+}
+
 // FindMessagesByMailboxID finds messages in the database by their mailbox ID.
-func (r *MessageRepository) FindMessagesByMailboxID(mailboxID uint) ([]*Message, error) {
+func (r *MessageRepository) FindMessagesByMailboxID(mailboxID uint, parameters FindMessagesParameters) ([]*Message, error) {
 	var messages []*Message
-	err := r.db.Where("mailbox_id = ?", mailboxID).Find(&messages).Error
+	query := r.db.Table(MessageWithSequenceNumberViewName).Where("mailbox_id = ?", mailboxID)
+
+	if len(parameters.SequenceSet) > 0 && len(parameters.UIDSet) > 0 {
+		return nil, fmt.Errorf("can't filter by both sequence numbers and uids at the same time")
+	}
+
+	// Handle find by sequence numbers
+	var seqSetWhere *gorm.DB
+	for i, sequence := range parameters.SequenceSet {
+
+		if i == 0 {
+			seqSetWhere = r.db.Where("sequence_number BETWEEN ? AND ?", sequence.Start, sequence.Stop)
+
+		} else {
+			seqSetWhere = seqSetWhere.Or("sequence_number BETWEEN ? AND ?", sequence.Start, sequence.Stop)
+		}
+
+	}
+	if seqSetWhere != nil {
+		query.Where(seqSetWhere)
+	}
+
+	// Handle find by uids
+	var uidWhere *gorm.DB
+	for i, sequence := range parameters.UIDSet {
+		if i == 0 {
+			uidWhere = query.Where("id BETWEEN ? AND ?", sequence.Start, sequence.Stop)
+
+		} else {
+			uidWhere = uidWhere.Or("id BETWEEN ? AND ?", sequence.Start, sequence.Stop)
+		}
+	}
+	if uidWhere != nil {
+		query.Where(uidWhere)
+	}
+
+	err := query.Find(&messages).Error
 	if err != nil {
 		return nil, err
 	}
