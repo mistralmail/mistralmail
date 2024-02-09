@@ -42,7 +42,7 @@ func TestIMAPServer(t *testing.T) {
 	var imapClient *client.Client
 
 	// Create the backend
-	backend, err := backend.New(config.DatabaseURL)
+	backend, err := backend.New(config.DatabaseURL, true)
 	if err != nil {
 		t.Errorf("%v", err)
 	}

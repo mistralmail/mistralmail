@@ -24,9 +24,9 @@ type Backend struct {
 }
 
 // New creates a new backend with the provided database url.
-func New(dbURL string) (*Backend, error) {
+func New(dbURL string, logFullQueries bool) (*Backend, error) {
 
-	db, err := initDB(dbURL)
+	db, err := initDB(dbURL, logFullQueries)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't init db: %w", err)
 	}

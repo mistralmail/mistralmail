@@ -28,7 +28,7 @@ func main() {
 		log.Fatalf("couldn't build config: %v", err)
 	}
 
-	backend, err = mistralmailbackend.New(config.DatabaseURL)
+	backend, err = mistralmailbackend.New(config.DatabaseURL, config.LogFullQueries)
 	if err != nil {
 		log.Fatalf("couldn't create backend: %v", err)
 	}

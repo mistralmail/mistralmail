@@ -18,7 +18,7 @@ import (
 // initDB creates a new datastore with the given database connection string/url
 // e.g. postgres://user:pass@localhost/dbname
 // e.g. sqlite:/path/to/file.db
-func initDB(dbURL string) (*gorm.DB, error) {
+func initDB(dbURL string, logFullQueries bool) (*gorm.DB, error) {
 
 	var db *gorm.DB
 
@@ -27,15 +27,21 @@ func initDB(dbURL string) (*gorm.DB, error) {
 		return nil, fmt.Errorf("couldn't parse database connection url: %w", err)
 	}
 
+	logLevel := logger.Warn
+	if logFullQueries {
+		logLevel = logger.Info
+	}
+	logParameters := !logFullQueries
+
 	c := &gorm.Config{
 		Logger: logger.New(
 			log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 			logger.Config{
-				SlowThreshold:             time.Second, // Slow SQL threshold
-				LogLevel:                  logger.Warn, // Log level
-				IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
-				ParameterizedQueries:      true,        // Don't include params in the SQL log
-				Colorful:                  true,        // Enable color
+				SlowThreshold:             time.Second,   // Slow SQL threshold
+				LogLevel:                  logLevel,      // Log level
+				IgnoreRecordNotFoundError: true,          // Ignore ErrRecordNotFound error for logger
+				ParameterizedQueries:      logParameters, // Include params in the SQL log
+				Colorful:                  true,          // Enable color
 			},
 		),
 	}

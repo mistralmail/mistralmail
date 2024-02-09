@@ -101,6 +101,12 @@ func BuildConfigFromEnv() (*Config, error) {
 	// Sentry
 	config.SentryDSN = getEnv("SENTRY_DSN", "")
 
+	// Log full queries
+	logFullQueries := getEnv("LOG_FULL_QUERIES", "")
+	if strings.ToUpper(logFullQueries) == "TRUE" {
+		config.LogFullQueries = true
+	}
+
 	// Spam check
 	spamCheckEnable := getEnv("SPAM_CHECK_ENABLE", "")
 	if strings.ToUpper(spamCheckEnable) == "TRUE" {
@@ -143,6 +149,7 @@ type Config struct {
 	Secret              string
 	MetricsAddress      string
 	SentryDSN           string
+	LogFullQueries      bool
 	EnableSpamCheck     bool
 
 	DisableTLS               bool

@@ -84,6 +84,7 @@ MistralMail exposes the following ports:
 | `HTTP_ADDRESS`                        | `:8080` | Address of the webserver that serves the web interface and the API. |
 | `SECRET`                              |               | Encryption secret. |
 | `SENTRY_DSN`                          |               | Sentry DNS if you want to log errors to Sentry. |
+| `LOG_FULL_QUERIES`                    | `false`       | Log all queries with their parameters. |
 | `SPAM_CHECK_ENABLE`                   | `false` | Enable the very basic spam check. Note that it sends all incoming messages to the [Postmark Spam Check API](https://spamcheck.postmarkapp.com). |
 | `METRICS_ADDRESS`                     | `:9000` | Prometheus metrics address. |
 

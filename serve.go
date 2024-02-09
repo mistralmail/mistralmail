@@ -50,7 +50,7 @@ func Serve(config *Config) {
 	log.Println("MistralMail at your service!")
 
 	// Create backend
-	backend, err := backend.New(config.DatabaseURL)
+	backend, err := backend.New(config.DatabaseURL, config.LogFullQueries)
 	if err != nil {
 		log.Fatalf("Couldn't create backend: %v", err)
 	}
