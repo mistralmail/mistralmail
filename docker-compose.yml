@@ -19,6 +19,7 @@ services:
       - TLS_ACME_DNS_PROVIDER
       - SECRET
       - SENTRY_DSN
+      - LOG_FULL_QUERIES
       - SPAM_CHECK_ENABLE
       - LEGO_CA_CERTIFICATES
     ports:

@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"gorm.io/gorm"
@@ -99,6 +100,10 @@ func (r *MessageRepository) FindMessagesByMailboxID(mailboxID uint, parameters F
 	var seqSetWhere *gorm.DB
 	for i, sequence := range parameters.SequenceSet {
 
+		if sequence.Stop == 0 {
+			sequence.Stop = math.MaxInt
+		}
+
 		if i == 0 {
 			seqSetWhere = r.db.Where("sequence_number BETWEEN ? AND ?", sequence.Start, sequence.Stop)
 
@@ -114,8 +119,13 @@ func (r *MessageRepository) FindMessagesByMailboxID(mailboxID uint, parameters F
 	// Handle find by uids
 	var uidWhere *gorm.DB
 	for i, sequence := range parameters.UIDSet {
+
+		if sequence.Stop == 0 {
+			sequence.Stop = math.MaxInt
+		}
+
 		if i == 0 {
-			uidWhere = query.Where("id BETWEEN ? AND ?", sequence.Start, sequence.Stop)
+			uidWhere = r.db.Where("id BETWEEN ? AND ?", sequence.Start, sequence.Stop)
 
 		} else {
 			uidWhere = uidWhere.Or("id BETWEEN ? AND ?", sequence.Start, sequence.Stop)

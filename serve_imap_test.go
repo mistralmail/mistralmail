@@ -714,6 +714,66 @@ func TestIMAPServer(t *testing.T) {
 					So(msg3, ShouldNotBeNil)
 					So(msg3.Uid, ShouldEqual, uid3)
 
+					// Get messages with wildcard uid
+					uids = &goimap.SeqSet{}
+					uids.AddRange(uid1, 0)
+
+					messages = make(chan *goimap.Message, 3)
+					done = make(chan error, 1)
+
+					go func() {
+						done <- imapClient.UidFetch(uids, []goimap.FetchItem{goimap.FetchFlags, goimap.FetchUid}, messages)
+					}()
+
+					select {
+					case err = <-done:
+						So(err, ShouldBeNil)
+					case <-time.After(5 * time.Second):
+						So(fmt.Errorf("time-out while waiting for fetch"), ShouldBeNil)
+					}
+
+					So(len(messages), ShouldEqual, 3)
+
+					msg1 = <-messages
+					So(msg1, ShouldNotBeNil)
+					So(msg1.Uid, ShouldEqual, uid1)
+
+					<-messages // msg2
+
+					msg3 = <-messages
+					So(msg3, ShouldNotBeNil)
+					So(msg3.Uid, ShouldEqual, uid3)
+
+					// Get messages with wildcard sequence set as well, since we're testing wildcards
+					uids = &goimap.SeqSet{}
+					uids.AddRange(1, 0)
+
+					messages = make(chan *goimap.Message, 3)
+					done = make(chan error, 1)
+
+					go func() {
+						done <- imapClient.Fetch(uids, []goimap.FetchItem{goimap.FetchFlags, goimap.FetchUid}, messages)
+					}()
+
+					select {
+					case err = <-done:
+						So(err, ShouldBeNil)
+					case <-time.After(5 * time.Second):
+						So(fmt.Errorf("time-out while waiting for fetch"), ShouldBeNil)
+					}
+
+					So(len(messages), ShouldEqual, 3)
+
+					msg1 = <-messages
+					So(msg1, ShouldNotBeNil)
+					So(msg1.Uid, ShouldEqual, uid1)
+
+					<-messages // msg2
+
+					msg3 = <-messages
+					So(msg3, ShouldNotBeNil)
+					So(msg3.Uid, ShouldEqual, uid3)
+
 					// Deleting messages with UIDs
 					_, err = imapClient.Select(newMailbox, false)
 					So(err, ShouldBeNil)
