@@ -13,12 +13,12 @@ import (
 	"github.com/mistralmail/mistralmail/backend"
 	"github.com/mistralmail/mistralmail/backend/services/certificates"
 	"github.com/mistralmail/mistralmail/handlers"
+	authenticationresults "github.com/mistralmail/mistralmail/handlers/authentication_results"
 	imaphandler "github.com/mistralmail/mistralmail/handlers/imap"
 	messageid "github.com/mistralmail/mistralmail/handlers/message-id"
 	"github.com/mistralmail/mistralmail/handlers/received"
 	"github.com/mistralmail/mistralmail/handlers/relay"
 	"github.com/mistralmail/mistralmail/handlers/spamcheck"
-	"github.com/mistralmail/mistralmail/handlers/spf"
 	"github.com/mistralmail/smtp/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
@@ -149,8 +149,8 @@ func Serve(config *Config) {
 	}
 
 	mtaHandlerChain := &handlers.HandlerMachanism{}
+	mtaHandlerChain.AddHandler(authenticationresults.New(mtaConfig))
 	mtaHandlerChain.AddHandler(received.New(mtaConfig))
-	mtaHandlerChain.AddHandler(spf.New(mtaConfig))
 	if config.EnableSpamCheck {
 		mtaHandlerChain.AddHandler(spamcheck.New(mtaConfig))
 	}

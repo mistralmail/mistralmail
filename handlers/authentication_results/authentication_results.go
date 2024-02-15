@@ -1,4 +1,4 @@
-package spf
+package authenticationresults
 
 import (
 	"fmt"
@@ -11,17 +11,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func New(c *server.Config) *Spf {
-	return &Spf{
+// New creates a new AuthenticationResults handler.
+// currently it only checks for SPF.
+func New(c *server.Config) *AuthenticationResults {
+	return &AuthenticationResults{
 		config: c,
 	}
 }
 
-type Spf struct {
+// AuthenticationResults handler adds the 'Authentication-Results' header.
+type AuthenticationResults struct {
 	config *server.Config
 }
 
-func (handler *Spf) Handle(state *smtp.State) error {
+// Handle implments the HandlerFunc interface.
+func (handler *AuthenticationResults) Handle(state *smtp.State) error {
+
 	// create SPF instance
 	spf, err := gospf.New(state.From.GetDomain(), &dns.GoSPFDNS{})
 	if err != nil {
@@ -41,7 +46,6 @@ func (handler *Spf) Handle(state *smtp.State) error {
 		}).Errorf("Error while checking ip in spf: %v", err)
 		return nil
 	}
-
 	log.WithFields(log.Fields{
 		"Ip":     state.Ip.String(),
 		"Domain": state.From.GetDomain(),
