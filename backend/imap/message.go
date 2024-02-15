@@ -29,16 +29,21 @@ func (m *IMAPMessage) entity() (*message.Entity, error) {
 	return message.Read(bytes.NewReader(m.message.Body))
 }
 
-func (m *IMAPMessage) headerAndBody() (textproto.Header, io.Reader, error) {
-
-	// If the body isn't selected from the database, we need to get the message with its body
+// loadBodyIfEmpty load the body if empty.
+// When the body isn't selected from the database, we need to get the message with its body
+func (m *IMAPMessage) loadBodyIfEmpty() error {
 	if m.message.Body == nil {
 		messageWithBody, err := m.messageRepo.GetMessageByID(m.message.ID)
 		if err != nil {
-			return textproto.Header{}, nil, fmt.Errorf("couldn't get message body: %w", err)
+			return fmt.Errorf("couldn't get message body: %w", err)
 		}
 		m.message.Body = messageWithBody.Body
 	}
+
+	return nil
+}
+
+func (m *IMAPMessage) headerAndBody() (textproto.Header, io.Reader, error) {
 
 	body := bufio.NewReader(bytes.NewReader(m.message.Body))
 	hdr, err := textproto.ReadHeader(body)
@@ -51,13 +56,24 @@ func (m *IMAPMessage) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Messag
 	for _, item := range items {
 		switch item {
 		case imap.FetchEnvelope:
+			err := m.loadBodyIfEmpty()
+			if err != nil {
+				return nil, err
+			}
 			hdr, _, err := m.headerAndBody()
 			if err != nil {
 				return nil, fmt.Errorf("couldn't get header and body: %w", err)
 			}
 			fetched.Envelope, _ = backendutil.FetchEnvelope(hdr)
 		case imap.FetchBody, imap.FetchBodyStructure:
-			hdr, body, _ := m.headerAndBody()
+			err := m.loadBodyIfEmpty()
+			if err != nil {
+				return nil, err
+			}
+			hdr, body, err := m.headerAndBody()
+			if err != nil {
+				return nil, fmt.Errorf("couldn't get header and body: %w", err)
+			}
 			fetched.BodyStructure, _ = backendutil.FetchBodyStructure(hdr, body, item == imap.FetchBodyStructure)
 		case imap.FetchFlags:
 			fetched.Flags = m.message.Flags
@@ -68,6 +84,10 @@ func (m *IMAPMessage) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Messag
 		case imap.FetchUid:
 			fetched.Uid = uint32(m.message.ID)
 		default:
+			err := m.loadBodyIfEmpty()
+			if err != nil {
+				return nil, err
+			}
 			section, err := imap.ParseBodySectionName(item)
 			if err != nil {
 				break
