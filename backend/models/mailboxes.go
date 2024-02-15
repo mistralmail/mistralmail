@@ -5,7 +5,6 @@ import "gorm.io/gorm"
 // Mailbox represent a mailbox.
 type Mailbox struct {
 	gorm.Model
-	DB *gorm.DB `gorm:"-"`
 
 	ID uint `gorm:"primary_key;auto_increment;not_null"`
 

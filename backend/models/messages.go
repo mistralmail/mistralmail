@@ -81,16 +81,25 @@ type Sequence struct {
 
 // FindMessagesParameters are optional parameters that can be used to get/find messages.
 type FindMessagesParameters struct {
+
 	// SequenceSet is a list of sequences with sequence numbers.
 	SequenceSet []Sequence
+
 	// UIDSet is a list of sequences with uids.
 	UIDSet []Sequence
+
+	// OmitBody excludes the email body in the message if set to true.
+	OmitBody bool
 }
 
 // FindMessagesByMailboxID finds messages in the database by their mailbox ID.
 func (r *MessageRepository) FindMessagesByMailboxID(mailboxID uint, parameters FindMessagesParameters) ([]*Message, error) {
 	var messages []*Message
 	query := r.db.Table(MessageWithSequenceNumberViewName).Where("mailbox_id = ?", mailboxID)
+
+	if parameters.OmitBody {
+		query = query.Omit("Body")
+	}
 
 	if len(parameters.SequenceSet) > 0 && len(parameters.UIDSet) > 0 {
 		return nil, fmt.Errorf("can't filter by both sequence numbers and uids at the same time")

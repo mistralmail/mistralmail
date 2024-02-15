@@ -74,7 +74,9 @@ func (mbox *IMAPMailbox) flags() []string {
 		return flags
 	*/
 
-	parameters := models.FindMessagesParameters{}
+	parameters := models.FindMessagesParameters{
+		OmitBody: true,
+	}
 
 	// TODO, yep this is not performant at all, but let's hope it works
 	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
@@ -102,7 +104,9 @@ func (mbox *IMAPMailbox) flags() []string {
 
 func (mbox *IMAPMailbox) unseenSeqNum() uint32 {
 
-	parameters := models.FindMessagesParameters{}
+	parameters := models.FindMessagesParameters{
+		OmitBody: true,
+	}
 
 	// TODO, yep this is not performant at all, but let's hope it works
 	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
@@ -208,7 +212,9 @@ func (mbox *IMAPMailbox) ListMessages(uid bool, seqSet *imap.SeqSet, items []ima
 		}
 	*/
 
-	parameters := models.FindMessagesParameters{}
+	parameters := models.FindMessagesParameters{
+		OmitBody: true,
+	}
 	if uid {
 		parameters.UIDSet = sequenceSetToSequencesSlice(seqSet)
 	} else {
@@ -225,9 +231,7 @@ func (mbox *IMAPMailbox) ListMessages(uid bool, seqSet *imap.SeqSet, items []ima
 
 	for _, message := range messages {
 
-		msg := IMAPMessage{
-			message: message,
-		}
+		msg := NewIMAPMessageFromMessage(message, mbox.messageRepo)
 
 		m, err := msg.Fetch(uint32(message.SequenceNumber), items)
 		if err != nil {
@@ -266,7 +270,9 @@ func (mbox *IMAPMailbox) SearchMessages(uid bool, criteria *imap.SearchCriteria)
 		return ids, nil
 	*/
 
-	parameters := models.FindMessagesParameters{}
+	parameters := models.FindMessagesParameters{
+		OmitBody: true,
+	}
 
 	// TODO, yep this is not performant at all, but let's hope it works
 	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
@@ -276,9 +282,7 @@ func (mbox *IMAPMailbox) SearchMessages(uid bool, criteria *imap.SearchCriteria)
 	var ids []uint32
 	for i, message := range messages {
 
-		msg := IMAPMessage{
-			message: message,
-		}
+		msg := NewIMAPMessageFromMessage(message, mbox.messageRepo)
 
 		seqNum := uint32(i + 1)
 
@@ -368,9 +372,7 @@ func (mbox *IMAPMailbox) UpdateMessagesFlags(uid bool, seqset *imap.SeqSet, op i
 	}
 	for i, message := range messages {
 
-		msg := IMAPMessage{
-			message: message,
-		}
+		msg := NewIMAPMessageFromMessage(message, mbox.messageRepo)
 
 		var id uint32
 		if uid {
@@ -491,7 +493,9 @@ func (mbox *IMAPMailbox) Expunge() error {
 		}
 	*/
 
-	parameters := models.FindMessagesParameters{}
+	parameters := models.FindMessagesParameters{
+		OmitBody: true,
+	}
 
 	// TODO, yep this is not performant at all, but let's hope it works
 	messages, err := mbox.messageRepo.FindMessagesByMailboxID(mbox.mailbox.ID, parameters)
