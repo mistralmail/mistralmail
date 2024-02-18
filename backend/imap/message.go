@@ -108,6 +108,13 @@ func (m *IMAPMessage) Fetch(seqNum uint32, items []imap.FetchItem) (*imap.Messag
 }
 
 func (m *IMAPMessage) Match(seqNum uint32, c *imap.SearchCriteria) (bool, error) {
+
+	// Maybe only load body if searching trough body?
+	err := m.loadBodyIfEmpty()
+	if err != nil {
+		return false, err
+	}
+
 	e, _ := m.entity()
 	return backendutil.Match(e, seqNum, uint32(m.message.ID), m.message.Date, m.message.Flags, c)
 }
