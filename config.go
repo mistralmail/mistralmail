@@ -30,6 +30,7 @@ var (
 	defaultDatabaseURL           = "sqlite:test.db"
 	defaultAcmeEndpoint          = "https://acme-v02.api.letsencrypt.org/directory"
 	defaultCertificatesDirectory = "./certificates"
+	defaultBlacklistURL          = "https://raw.githubusercontent.com/bitwire-it/ipblocklist/refs/heads/main/ip-list.txt"
 )
 
 // BuildConfigFromEnv populates a MistralMail config from env variables
@@ -113,6 +114,9 @@ func BuildConfigFromEnv() (*Config, error) {
 		config.EnableSpamCheck = true
 	}
 
+	// Blacklist URL
+	config.BlacklistURL = getEnv("BLACKLIST_URL", defaultBlacklistURL)
+
 	return config, nil
 }
 
@@ -151,6 +155,7 @@ type Config struct {
 	SentryDSN           string
 	LogFullQueries      bool
 	EnableSpamCheck     bool
+	BlacklistURL        string
 
 	DisableTLS               bool
 	TLSCertificatesDirectory string
@@ -274,7 +279,7 @@ func (config *Config) GenerateMTAConfig() *server.Config {
 
 	portInt, _ := strconv.Atoi(port)
 
-	nixspamBlacklist, err := helpers.NewNixspam()
+	blacklist, err := helpers.NewBlacklist(config.BlacklistURL)
 	if err != nil {
 		log.Warnln("couldn't create Nixspam Blacklist instance: ", err)
 	}
@@ -283,7 +288,7 @@ func (config *Config) GenerateMTAConfig() *server.Config {
 		Hostname:    config.Hostname,
 		Ip:          host,
 		Port:        uint32(portInt),
-		Blacklist:   nixspamBlacklist,
+		Blacklist:   blacklist,
 		DisableAuth: true,
 	}
 }
@@ -299,7 +304,7 @@ func (config *Config) GenerateMSAConfig() *server.Config {
 
 	portInt, _ := strconv.Atoi(port)
 
-	nixspamBlacklist, err := helpers.NewNixspam()
+	blacklist, err := helpers.NewBlacklist(config.BlacklistURL)
 	if err != nil {
 		log.Warnln("couldn't create Nixspam Blacklist instance: ", err)
 	}
@@ -308,7 +313,7 @@ func (config *Config) GenerateMSAConfig() *server.Config {
 		Hostname:    config.Hostname,
 		Ip:          host,
 		Port:        uint32(portInt),
-		Blacklist:   nixspamBlacklist,
+		Blacklist:   blacklist,
 		DisableAuth: false,
 	}
 }

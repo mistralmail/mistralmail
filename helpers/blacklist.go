@@ -20,12 +20,12 @@ type Nixspam struct {
 	IpList []string
 }
 
-func NewNixspam() (*Nixspam, error) {
+func NewBlacklist(url string) (*Nixspam, error) {
 
 	ns := Nixspam{}
 	ns.IpList = make([]string, 0)
 
-	resp, err := http.Get("http://www.dnsbl.manitu.net/download/nixspam-ip.dump")
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
